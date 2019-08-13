@@ -1,8 +1,8 @@
 Package.describe({
-    name: 'symptomatic:example-plugin',
+    name: 'patientinsight:accreditation-utility',
     version: '0.1.17',
-    summary: 'Example Symptomatic plugin, with dynamic routes and UI elements.',
-    git: 'https://github.com/symptomatic/example-plugin',
+    summary: 'PatientInsight - Accreditation Utility (Cardiac)',
+    git: 'https://github.com/symptomatic/accreditation-utility  ',
     documentation: 'README.md'
 });
   
