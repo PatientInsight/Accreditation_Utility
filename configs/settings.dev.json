@@ -1,20 +1,21 @@
 {
   "public": {
-    "title": "Symptomatic.io",
+    "title": "PatientInsight - Accreditation Utility",
     "theme": {
       "showVideoBackground": false,
       "darkroomTextEnabled": false,
-      "defaultVideo": "/VideoBackgrounds/GrayWaves.mp4",
-      "backgroundImagePath": "/backgrounds/medical/Gradient.jpg"      
+      "backgroundImagePath": "/packages/symptomatic_theming/backgrounds/Gradient-Desaturated.png",
+      "glassColor": "rgba(255, 255, 255, 1)",
+      "boxShadows": "none"
     },
     "home": {
       "showUnderConstruction": false,
       "showExperimental": false,
       "showApps": true,      
-      "showFhirMenu": true
+      "showFhirMenu": true,
+      "showRegistration": true
     },
     "defaults": {
-      "route": "/example-route",
       "avatars": true,
       "barcodes": true,
       "hexgridMenu": false,
@@ -32,23 +33,70 @@
       "cards": {
         "height": "auto",
         "opacity": 0.95
-      }      
+      },
+      "registration": {
+        "displayAccessCode": true,
+        "signInWith": false
+      },
+      "routes": {
+        "homePage": "/",
+        "landingPage": "/scorecard",
+        "adminWelcomePage": "/scorecard",
+        "adminHomePage": "/scorecard",
+        "adminDashboard": "/scorecard"
+      },
+      "header":{
+        "menuIcon": ""
+      },
+      "sidebar": {
+        "menuItems": {
+          "Index": false,
+          "Healthlog": false,
+          "GettingStarted": false,
+          "DataManagement": true,
+          "FhirResources": true,
+          "Theming": false
+        },
+        "hidden": [
+          "/allergies",
+          "/communications",
+          "/consents",
+          "/consents",
+          "/contracts",
+          "/claims",
+          "/endpoints",
+          "/biometrics-dashboard",
+          "/body-mass-index",
+          "/imaging-studies",
+          "/immunizations",
+          "/goals",
+          "/locations",
+          "/devices",
+          "/medication-statements",
+          "/persons",
+          "/risk-assessments",
+          "/questionnaires",
+          "/subscriptions",
+          "/workqueue",
+          "/hello-world",
+          "/vitals-tracking",
+          "/example-route",
+          "/import-data",
+          "/export-data"
+        ]
+      }
     },
     "interfaces": {
       "default": {
-        "status": "inactive",
+        "status": "active",
         "channel": {
-          "endpoint": "http://localhost:80"
+          "endpoint": "https://syntheticmass.mitre.org/v1/fhir"
         },
         "auth": {
-          "username": "foo",
-          "password": "bar"
+          "username": "iPcaA8Qg4ElaTjOlm1fkoiPdC8AGEpJ6",
+          "password": "AI1yGzOfo06Gg3ku"
         }
       }
-    },
-    "meshNetwork": {
-      "upstreamSync": "http://meteor-on-fhir.meteorapp.com/fhir-3.0.0", 
-      "autosync": false
     },
     "modules": {
       "data": true,

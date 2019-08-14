@@ -4,7 +4,7 @@ import BodyMassIndexPage from './client/BodyMassIndexPage';
 
 var DynamicRoutes = [{
   'name': 'HelloWorldPage',
-  'path': '/hello-world',
+  'path': '/scorecard',
   'component': HelloWorldPage
 }, {
   'name': 'BodyMassIndexPage',
@@ -12,14 +12,14 @@ var DynamicRoutes = [{
   'component': BodyMassIndexPage
 }];
 
-var SidebarElements = [{
-  'primaryText': 'Example Page',
-  'to': '/hello-world',
-  'href': '/hello-world'
+var AdminSidebarElements = [{
+  'primaryText': 'Scorecard',
+  'to': '/scorecard',
+  'href': '/scorecard'
 }, {
   'primaryText': 'Body Mass Calculator',
   'to': '/body-mass-index',
   'href': '/body-mass-index'
 }];
 
-export { SidebarElements, DynamicRoutes, SamplePage, PostcardPage, BodyMassIndexPage };
+export { AdminSidebarElements, DynamicRoutes, SamplePage, PostcardPage, BodyMassIndexPage };

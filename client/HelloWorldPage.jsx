@@ -1,5 +1,5 @@
-import { CardMedia, CardText, CardTitle, CardHeader } from 'material-ui/Card';
-import { GlassCard, VerticalCanvas, Glass } from 'meteor/clinical:glass-ui';
+import { CardMedia, CardText, CardTitle, CardHeader, RaisedButton } from 'material-ui';
+import { GlassCard, FullPageCanvas, Glass } from 'meteor/clinical:glass-ui';
 
 import React from 'react';
 import { ReactMeteorData } from 'meteor/react-meteor-data';
@@ -8,9 +8,43 @@ import { browserHistory } from 'react-router';
 
 import { get, has } from 'lodash';
 
+import { Table } from 'react-bootstrap';
 import { Session } from 'meteor/session';
+import { HTTP } from 'meteor/http';
+import { EJSON } from 'meteor/ejson';
+
+import Client from 'fhir-kit-client';
+
+console.log('Intitializing fhir-kit-client for ' + get(Meteor, 'settings.public.interfaces.default.channel.endpoint', ''))
+const client = new Client({
+  baseUrl: get(Meteor, 'settings.public.interfaces.default.channel.endpoint', '')
+});
+
+Session.setDefault('displayText', '');
+Session.setDefault('measuresArray', [{
+  identifier: "CM.M12a",
+  description: "Proportion of patients receiving Echocardiogram",
+  score: 0
+}, {
+  identifier: "CM.M12b",
+  description: "Proportion of patients receiving Cardiac MRI",
+  score: 0
+}, {
+  identifier: "CM.M12c",
+  description: "Proportion of patients receiving Endoscopy",
+  score: 0
+}, {
+  identifier: "CM.M12d",
+  description: "Proportion of patients receiving Coronary Angiography",
+  score: 0
+}]);
+Session.setDefault('activeMeasure', {});
+Session.setDefault('showJson', false);
+Session.setDefault('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=112790001&apikey=');
 
 
+// 40701008   Echocardiogram
+// 241620005  Cardiac MRI
 
 export class HelloWorldPage extends React.Component {
   constructor(props) {
@@ -78,8 +112,15 @@ export class HelloWorldPage extends React.Component {
       },
       organizations: {
         image: "/pages/provider-directory/organizations.jpg"
-      }
+      },
+      displayText: Session.get('displayText'),
+      measures: Session.get('measuresArray'),
+      showJson: Session.get('showJson'),
+      endpoint: get(Meteor, 'settings.public.interfaces.default.channel.endpoint', ''),
+      apiKey: get(Meteor, 'settings.public.interfaces.default.auth.username', ''),
+      fhirQueryUrl: Session.get('fhirQueryUrl')
     };
+
 
     data.style.indexCard = Glass.darkroom(data.style.indexCard);
 
@@ -104,89 +145,183 @@ export class HelloWorldPage extends React.Component {
     if(process.env.NODE_ENV === "test") console.log("HelloWorldPage[data]", data);
     return data;
   }
+  toggleDisplayJson(){
+    Session.toggle('showJson');
+  }
+  fetchMetadata(fhirClient){
+    console.log('fetchMetadata')
+    console.log('fhirClient', fhirClient)
+
+    console.log('fhirClient.smartAuthMetadata()', fhirClient.smartAuthMetadata())
+    fhirClient.smartAuthMetadata().then((response) => {
+      console.log('smartAuthMetadata', response);
+    });
+    fhirClient.capabilityStatement().then((data) => {
+      console.log('capabilityStatement', data);
+      Session.set('displayText', data);
+    });  
+
+    // console.log('metadataAutoscan....');
+    // Meteor.call('metadataAutoscan', Session.get('oauthBaseUrl'), function(error, result){
+    //   if(result){
+    //     console.log('result', result)
+    //     Session.set('displayText', result)
+    //   }
+    // })
+
+  }
+  async queryEndpoint(scope, modality){
+    console.log('queryEndpoint')
+
+    await Meteor.call("queryEndpoint", scope.data.endpoint + scope.data.fhirQueryUrl + scope.data.apiKey, function(error, result){
+      let parsedResults = JSON.parse(result.content);
+      console.log('result', parsedResults)
+      // console.log('content', parsedResults)
+      Session.set('displayText', parsedResults);
+
+      let measures = Session.get('measuresArray');
+      switch (modality) {
+        case "endoscopy":
+          measures[2].numerator = parsedResults.total;
+          measures[2].denominator = parsedResults.total;
+          measures[2].score =  ((measures[2].numerator /  measures[2].denominator) * 100) + '%';
+          break;
+        case "mri":
+          measures[1].numerator = parsedResults.total;
+          measures[1].denominator = parsedResults.total;
+          measures[1].score = (( measures[1].numerator /  measures[1].denominator) * 100) + '%';
+          break;
+        case "echo":
+          measures[0].numerator = parsedResults.total;
+          measures[0].denominator = parsedResults.total;
+          measures[0].score = (( measures[0].numerator /  measures[0].denominator) * 100) + "%";
+          break;
+        case "angio":
+          measures[3].numerator = parsedResults.total;
+          measures[3].denominator = parsedResults.total;
+          measures[3].score = (( measures[3].numerator /  measures[3].denominator) * 100) + "%";
+          break;
+        case "patient":
+          measures[0].denominator = parsedResults.total;
+          measures[1].denominator = parsedResults.total;
+          measures[2].denominator = parsedResults.total;
+          measures[3].denominator = parsedResults.total;
+
+          measures[0].score = (( measures[0].numerator /  measures[0].denominator) * 100) + "%";
+          measures[1].score = (( measures[1].numerator /  measures[1].denominator) * 100) + "%";
+          measures[2].score = (( measures[2].numerator /  measures[2].denominator) * 100) + "%";
+          measures[3].score = (( measures[3].numerator /  measures[3].denominator) * 100) + "%";
+          break;
+                
+        default:
+          break;
+      }
+      Session.set('measuresArray', measures);
+    })
+
+  }
+  queryEndoscopy(){
+    console.log('queryEndoscopy')
+    Session.set('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=112790001&apikey=');
+    this.queryEndpoint(this, 'endoscopy');
+  }
+  queryEchocardiograms(){
+    console.log('queryEchocardiograms')
+    Session.set('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=40701008&apikey=');
+    this.queryEndpoint(this, 'echo');
+  }
+  queryAngiography(){
+    console.log('queryAngiography')
+    Session.set('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=33367005&apikey=');
+    this.queryEndpoint(this, 'angio');
+  }
+  queryMris(){
+    console.log('queryMris')
+    Session.set('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=241620005&apikey=');
+    this.queryEndpoint(this, 'mri');
+  }
+  queryPatients(){
+    console.log('queryPatients')
+    Session.set('fhirQueryUrl', '/Patient?apikey=');
+    this.queryEndpoint(this, 'patient');
+  }
+  rowClick(){
+    console.log('rowClick')
+  }
   render() {
+    let tableRows = [];
+    for (var i = 0; i < this.data.measures.length; i++) {
+
+      let rowStyle = {
+        cursor: 'pointer',
+        textAlign: 'left'
+      }
+
+
+      tableRows.push(
+        <tr key={i} className="patientRow" style={rowStyle} onClick={ this.rowClick.bind(this, this.data.measures[i]._id)} >
+          <td>{this.data.measures[i].identifier }</td>
+          <td>{this.data.measures[i].description }</td>
+          <td>{ this.data.measures[i].numerator }</td>
+          <td>{ this.data.measures[i].denominator }</td>
+          <td>{ this.data.measures[i].score }</td>
+          <td>{ this.data.measures[i].passfail }</td>
+        </tr>
+      );
+    }
+
+    let codeSection;
+
+    if(this.data.showJson){
+      codeSection = <pre style={{height: '200px', backgroundColor: "#eeeeee", border: '1px dashed gray', padding: '10px', marginTop: '10px', marginBottom: '10px'}}>
+        { JSON.stringify(this.data.displayText, null, ' ')  }
+      </pre>
+    }
+
 
     return (
       <div id='indexPage'>
-        <VerticalCanvas>
+        <FullPageCanvas>
           <GlassCard height='auto'>
             <CardTitle 
-              title="Blank Canvas - Build Your Own Module" 
-              subtitle="Welcome to Meteor on FHIR!  A web framework for building HIPAA secure, FDA ready, and EHR ready applications."
+              title="Accreditation Scorecard" 
+              subtitle="Cardiac Measures"
               style={{fontSize: '100%'}} />
             <CardText style={{fontSize: '100%'}}>
               
-              <h4>Features</h4>
-              <ul>
-                <li>Private plugins for your intellectual property datasets, use cases, algorithms</li>              
-                <li>Compile to Phones, Tablets, Web, TV, and VideoWalls</li>              
-                <li>Fast Healthcare Interoperability Resources (HL7 FHIR) data interoperability layer</li>
-                <li>Library of FHIR widgets to build your workflow with.</li>              
-                <li>Designed for continuous integration testing and FDA precertification</li>
-                <li>Desgined with HIPAA scale out strategy</li>              
-                <li>Ready to go to market with Epic, Cerner, and Apple App Stores, or as SaaS or local deploy</li>              
-                <li>Open source community base (MIT/GPL) with licensable premium plugins</li>              
-                <li>Supports dashboards, advanced visualizations, and real time graphs.</li>              
-                <li>Augmented reality interface, with geomapping and camera support for A/R health apps.</li>              
-                <li>Themable and brandable</li>              
-                <li>Designed by bioinformatics students at UChicago.</li>              
-              </ul>
-              <br />
+             <h4 className="helveticas">{ this.data.endpoint + this.data.fhirQueryUrl + this.data.apiKey }</h4><br />
+             <RaisedButton label="Metadata" onClick={this.fetchMetadata.bind(this, client)} style={{marginRight: '20px'}} />      
+             <RaisedButton label="Show JSON" onClick={this.toggleDisplayJson.bind(this)} style={{marginRight: '20px'}} />
 
-              <h4>Getting Started</h4>
-              <ul>
-                <li>
-                  <a href="https://guide.meteor.com/" >Meteor Guide (Tutorials)</a>                              
-                </li>                              
-                <li>
-                  <a href="https://guide.meteor.com/" >Meteor Guide (Tutorials)</a>                              
-                </li>                              
-                <li>
-                  <a href="https://github.com/clinical-meteor/meteor-on-fhir" >Meteor on FHIR Source Code (Github)</a>                              
-                </li>              
-                <li>
-                  <a href="https://github.com/clinical-meteor/software-development-kit/blob/master/cookbook/creating.a.symptomatic.plugin.md" >Creating a Plugin</a>                              
-                </li>              
-                <li>
-                  <a href="https://github.com/clinical-meteor/example-plugin" >Example Plugin</a>                              
-                </li>              
-                <li>
-                  <a href="https://github.com/clinical-meteor" >Clinical Meteor (GitHub)</a>                              
-                </li>              
-                <li>
-                  <a href="https://clinical.meteorapp.com" >Clinical Meteor - Release Track Homepage</a>                              
-                </li>              
-                <li>
-                  <a href="https://github.com/clinical-meteor/software-development-kit" >Clinical Meteor - Software Development Kit</a>                              
-                </li>              
-                <li>
-                  <a href="https://www.hl7.org/fhir/resourcelist.html" >FHIR Resource List (Healthcare API)</a>                              
-                </li>              
-              </ul> 
-              <br />
+             <RaisedButton label="Query Patients" onClick={this.queryPatients.bind(this)} style={{marginRight: '20px'}} />             
 
-              <h4>Getting Help</h4>
-              <ul>
-                <li>
-                  <a href="https://github.com/clinical-meteor/meteor-on-fhir/issues" >File a Technical Issue or Bug</a>                              
-                </li>              
-                <li>
-                  <a href="https://www.meetup.com/Javascript-Healthcare-Hackathons/" >Chicago Javascript Healthcare Hackathons</a>
-                </li>              
-                <li>
-                  <a href="http://forums.meteor.com" >Meteor Support Forums</a>
-                </li>              
-                <li>
-                  <a href="http://chat.fhir.org" >FHIR Chat</a>
-                </li>              
-                <li>
-                  <a href="http://http://community.fhir.org/" >FHIR Community Forum</a>
-                </li>              
-              </ul>                            
+             <RaisedButton label="Query Endoscopy" onClick={this.queryEndoscopy.bind(this)} style={{marginRight: '20px'}} />             
+             <RaisedButton label="Query Echocardiograms" onClick={this.queryEchocardiograms.bind(this)} style={{marginRight: '20px'}} />
+             <RaisedButton label="Query Angiography" onClick={this.queryAngiography.bind(this)} style={{marginRight: '20px'}} />
+             <RaisedButton label="Query Cardiac MRIs" onClick={this.queryMris.bind(this)} /><br /><br />
 
+
+              { codeSection }
+              
+              <Table hover >
+                <thead>
+                  <tr>
+                    <th>Identifier</th>
+                    <th>Measure Description</th>
+                    <th>Numerator</th>
+                    <th>Denominator</th>
+                    <th>Score</th>
+                    <th>Pass / Fail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  { tableRows }
+                </tbody>
+              </Table>
+ 
             </CardText>
           </GlassCard>
-        </VerticalCanvas>
+        </FullPageCanvas>
       </div>
     );
   }

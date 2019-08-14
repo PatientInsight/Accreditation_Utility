@@ -46,3 +46,9 @@ meteor --settings packages/accreditation-utility/configs/settings.example.json
 The BodyMassIndex calculator relies on [SMART on FHIR](http://docs.smarthealthit.org/) to fetch [FHIR Patient](https://www.hl7.org/fhir/patient.html) and [FHIR Observation](https://www.hl7.org/fhir/observation.html) resources.  We then create a [FHIR RiskAssessment](https://www.hl7.org/fhir/riskassessment.html) for obesity.  When fetching from an upstream FHIR Server, the overall data architecture and sequence diagram looks like the following.
 
 ![BodyMassIndex Data Pipeline](https://raw.githubusercontent.com/symptomatic/accreditation-utility/master/assets/Body%20Mass%20Index%20Calculator%20Plugin%20-%20New%20Page.png)  
+
+
+#### Bypassing CORS
+```
+open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --user-data-dir="/tmp/chrome_dev_test" --disable-web-security
+```
