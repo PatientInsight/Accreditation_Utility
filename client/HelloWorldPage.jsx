@@ -1,4 +1,4 @@
-import { CardMedia, CardText, CardTitle, CardHeader, RaisedButton } from 'material-ui';
+import { CardMedia, CardText, CardTitle, CardHeader, RaisedButton, FlatButton } from 'material-ui';
 import { GlassCard, FullPageCanvas, Glass } from 'meteor/clinical:glass-ui';
 
 import React from 'react';
@@ -22,6 +22,14 @@ const client = new Client({
 
 Session.setDefault('displayText', '');
 Session.setDefault('measuresArray', [{
+  identifier: "CM.M1",
+  description: "Heart failure specific admission rates to Observation level of care.",
+  score: 0
+}, {
+  identifier: "CM.M2",
+  description: "Heart failure specific admission rates to inpatient level of care Proportion of patients admitted to Inpatient level of care as their initial level of care. ",
+  score: 0
+}, {
   identifier: "CM.M12a",
   description: "Proportion of patients receiving Echocardiogram",
   score: 0
@@ -37,11 +45,46 @@ Session.setDefault('measuresArray', [{
   identifier: "CM.M12d",
   description: "Proportion of patients receiving Coronary Angiography",
   score: 0
+}, {
+  identifier: "CM.M15",
+  description: "Door to ECG time Median time from arrival to ECG performed. ",
+  score: 0
+}, {
+  identifier: "CM.M17",
+  description: "Door to therapy time for nitroglycerin or other vasodilator during early stabilization.",
+  score: 0
+}, {
+  identifier: "CM.M18",
+  description: "Door to IV therapy time for diuretic during early stabilization.",
+  score: 0
+}, {
+  identifier: "CM.M24",
+  description: "Observation patients receiving a Cardiology consult.",
+  score: 0
+}, {
+  identifier: "CM.M27",
+  description: "Screening completion for CRT/CRT-D during Inpatient level of care stay.",
+  score: 0
+}, {
+  identifier: "CM.M28c",
+  description: "Documented daily weight complete.",
+  score: 0
+}, {
+  identifier: "CM.M29",
+  description: "Cardiology consult.",
+  score: 0
+}, {
+  identifier: "CM.M31",
+  description: "Daily assessment of renal and electrolyte function.   Proportion of patients having documented daily assessment of electrolytes and renal function. ",
+  score: 0
 }]);
 Session.setDefault('activeMeasure', {});
 Session.setDefault('showJson', false);
 Session.setDefault('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=112790001&apikey=');
 
+Session.setDefault('patient_has_encounter_observational', 0);
+Session.setDefault('patient_has_encounter_inpatient', 0);
+Session.setDefault('patient_has_encounter_ambulatory', 0);
 
 // 40701008   Echocardiogram
 // 241620005  Cardiac MRI
@@ -113,6 +156,14 @@ export class HelloWorldPage extends React.Component {
       organizations: {
         image: "/pages/provider-directory/organizations.jpg"
       },
+      totals: {
+        // https://www.hl7.org/fhir/v3/ActEncounterCode/vs.html
+        patients: {
+          inpatients: Session.get('patient_has_encounter_inpatient'),
+          observations: Session.get('patient_has_encounter_observational'),
+          ambulatory: Session.get('patient_has_encounter_ambulatory')
+        }
+      },
       displayText: Session.get('displayText'),
       measures: Session.get('measuresArray'),
       showJson: Session.get('showJson'),
@@ -120,6 +171,14 @@ export class HelloWorldPage extends React.Component {
       apiKey: get(Meteor, 'settings.public.interfaces.default.auth.username', ''),
       fhirQueryUrl: Session.get('fhirQueryUrl')
     };
+
+
+
+
+
+
+
+
 
 
     data.style.indexCard = Glass.darkroom(data.style.indexCard);
@@ -182,38 +241,48 @@ export class HelloWorldPage extends React.Component {
       let measures = Session.get('measuresArray');
       switch (modality) {
         case "endoscopy":
-          measures[2].numerator = parsedResults.total;
-          measures[2].denominator = parsedResults.total;
-          measures[2].score =  ((measures[2].numerator /  measures[2].denominator) * 100) + '%';
+          measures[4].numerator = parsedResults.total;
+          measures[4].denominator = parsedResults.total;
+          measures[4].score =  ((measures[4].numerator /  measures[4].denominator) * 100) + '%';
           break;
         case "mri":
-          measures[1].numerator = parsedResults.total;
-          measures[1].denominator = parsedResults.total;
-          measures[1].score = (( measures[1].numerator /  measures[1].denominator) * 100) + '%';
-          break;
-        case "echo":
-          measures[0].numerator = parsedResults.total;
-          measures[0].denominator = parsedResults.total;
-          measures[0].score = (( measures[0].numerator /  measures[0].denominator) * 100) + "%";
-          break;
-        case "angio":
           measures[3].numerator = parsedResults.total;
           measures[3].denominator = parsedResults.total;
-          measures[3].score = (( measures[3].numerator /  measures[3].denominator) * 100) + "%";
+          measures[3].score = (( measures[3].numerator /  measures[3].denominator) * 100) + '%';
+          break;
+        case "echo":
+          measures[2].numerator = parsedResults.total;
+          measures[2].denominator = parsedResults.total;
+          measures[2].score = (( measures[2].numerator /  measures[2].denominator) * 100) + "%";
+          break;
+        case "angio":
+          measures[5].numerator = parsedResults.total;
+          measures[5].denominator = parsedResults.total;
+          measures[5].score = (( measures[5].numerator /  measures[5].denominator) * 100) + "%";
           break;
         case "patient":
           measures[0].denominator = parsedResults.total;
           measures[1].denominator = parsedResults.total;
           measures[2].denominator = parsedResults.total;
           measures[3].denominator = parsedResults.total;
+          measures[4].denominator = parsedResults.total;
+          measures[5].denominator = parsedResults.total;
+          measures[6].denominator = parsedResults.total;
+          measures[7].denominator = parsedResults.total;
+          measures[8].denominator = parsedResults.total;
+          measures[9].denominator = parsedResults.total;
+          measures[10].denominator = parsedResults.total;
+          measures[11].denominator = parsedResults.total;
+          measures[12].denominator = parsedResults.total;
+          measures[13].denominator = parsedResults.total;
 
-          measures[0].score = (( measures[0].numerator /  measures[0].denominator) * 100) + "%";
-          measures[1].score = (( measures[1].numerator /  measures[1].denominator) * 100) + "%";
           measures[2].score = (( measures[2].numerator /  measures[2].denominator) * 100) + "%";
           measures[3].score = (( measures[3].numerator /  measures[3].denominator) * 100) + "%";
+          measures[4].score = (( measures[4].numerator /  measures[4].denominator) * 100) + "%";
+          measures[5].score = (( measures[5].numerator /  measures[5].denominator) * 100) + "%";
           break;
-                
-        default:
+
+          default:
           break;
       }
       Session.set('measuresArray', measures);
@@ -235,8 +304,8 @@ export class HelloWorldPage extends React.Component {
     Session.set('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=33367005&apikey=');
     this.queryEndpoint(this, 'angio');
   }
-  queryMris(){
-    console.log('queryMris')
+  queryCardiacMris(){
+    console.log('queryCardiacMris')
     Session.set('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=241620005&apikey=');
     this.queryEndpoint(this, 'mri');
   }
@@ -244,9 +313,94 @@ export class HelloWorldPage extends React.Component {
     console.log('queryPatients')
     Session.set('fhirQueryUrl', '/Patient?apikey=');
     this.queryEndpoint(this, 'patient');
+    this.queryEndpoint(this, 'patient');
   }
-  rowClick(){
-    console.log('rowClick')
+  async queryPatientStats(scope){
+    console.log('queryPatientStats');
+
+    // https://www.hl7.org/fhir/v3/ActEncounterCode/vs.html
+
+    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=IMP&apikey=' + this.data.apiKey, function(error, result){
+      let parsedResults = JSON.parse(result.content);
+      console.log('Inpatients:  ', parsedResults)
+      Session.set('patient_has_encounter_observational', parsedResults.total);
+    })
+
+    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=AMB&apikey=' + this.data.apiKey, function(error, result){
+      let parsedResults = JSON.parse(result.content);
+      console.log('Ambulatory:  ', parsedResults)
+      Session.set('patient_has_encounter_inpatient', parsedResults.total);
+    })
+
+    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=OBSENC&apikey=' + this.data.apiKey, function(error, result){
+      let parsedResults = JSON.parse(result.content);
+      console.log('Observations:  ', parsedResults)
+      Session.set('patient_has_encounter_ambulatory', parsedResults.total);
+    })
+
+
+  }
+  rowClick(id){
+    //console.log('rowClick', id)
+  }
+  runAction(identifier, foo, bar){
+    //console.log('runAction', identifier)
+
+    switch (identifier) {
+      case "CM.M1":
+        console.log('Running algorithm 1')        
+        break;
+      case "CM.M2":
+        console.log('Running algorithm 2')      
+        break;
+      case "CM.M12a":
+        console.log('Running algorithm 12a')
+        this.queryEchocardiograms();
+        break;
+      case "CM.M12b":
+        console.log('Running algorithm 12b')      
+        this.queryCardiacMris();         
+        break;
+      case "CM.M12c":
+        console.log('Running algorithm 12c')  
+        this.queryEndoscopy();         
+        break;
+      case "CM.M12d":
+        console.log('Running algorithm 12d')       
+        this.queryAngiography();
+        break;
+      case "CM.M15":
+        console.log('Running algorithm 15')                    
+        break;
+      case "CM.M17":
+        console.log('Running algorithm 17')                          
+        break;
+      case "CM.M18":
+        console.log('Running algorithm 18')                            
+        break;
+      case "CM.M24":
+        console.log('Running algorithm 24')                                  
+        break;
+      case "CM.M27":
+        console.log('Running algorithm 27')         
+        break;
+      case "CM.M28c":
+        console.log('Running algorithm 28')           
+        break;
+      case "CM.M29":
+        console.log('Running algorithm 29')           
+        break;
+      case "CM.M31":
+        console.log('Running algorithm 31')           
+        break;                                        
+      default:
+        break;
+    }
+
+  }
+  relayAction(identifier, foo, bar){
+    console.log('runAction', identifier)
+
   }
   render() {
     let tableRows = [];
@@ -257,15 +411,27 @@ export class HelloWorldPage extends React.Component {
         textAlign: 'left'
       }
 
+      let styles = {
+        row: {
+          cursor: 'pointer',
+          textAlign: 'left'  
+        },
+        actionButton: {
+          height: '24px',
+          lineHeight: '24px'
+        }
+      }
 
       tableRows.push(
         <tr key={i} className="patientRow" style={rowStyle} onClick={ this.rowClick.bind(this, this.data.measures[i]._id)} >
+          <td><FlatButton style={ styles.actionButton } onClick={this.runAction.bind(this, this.data.measures[i].identifier)} >Run</FlatButton></td>
           <td>{this.data.measures[i].identifier }</td>
           <td>{this.data.measures[i].description }</td>
           <td>{ this.data.measures[i].numerator }</td>
           <td>{ this.data.measures[i].denominator }</td>
           <td>{ this.data.measures[i].score }</td>
           <td>{ this.data.measures[i].passfail }</td>
+          <td><FlatButton style={ styles.actionButton } onClick={this.relayAction.bind(this, this.data.measures[i].identifier)} >Relay</FlatButton></td>
         </tr>
       );
     }
@@ -284,21 +450,47 @@ export class HelloWorldPage extends React.Component {
         <FullPageCanvas>
           <GlassCard height='auto'>
             <CardTitle 
-              title="Accreditation Scorecard" 
-              subtitle="Cardiac Measures"
+              title="Cardiac Accreditation Scorecard" 
+              subtitle={ this.data.endpoint + this.data.fhirQueryUrl + this.data.apiKey }
               style={{fontSize: '100%'}} />
             <CardText style={{fontSize: '100%'}}>
-              
-             <h4 className="helveticas">{ this.data.endpoint + this.data.fhirQueryUrl + this.data.apiKey }</h4><br />
+
+
+
+
+
+             <hr />
              <RaisedButton label="Metadata" onClick={this.fetchMetadata.bind(this, client)} style={{marginRight: '20px'}} />      
              <RaisedButton label="Show JSON" onClick={this.toggleDisplayJson.bind(this)} style={{marginRight: '20px'}} />
 
              <RaisedButton label="Query Patients" onClick={this.queryPatients.bind(this)} style={{marginRight: '20px'}} />             
+             <RaisedButton label="Query Patient Stats" onClick={this.queryPatientStats.bind(this)} style={{marginRight: '20px'}} />             
 
-             <RaisedButton label="Query Endoscopy" onClick={this.queryEndoscopy.bind(this)} style={{marginRight: '20px'}} />             
+             <hr />
+
+
+             <CardTitle 
+              title={this.data.totals.patients.inpatients} 
+              subtitle="Inpatients"
+              style={{fontSize: '100%', float: 'left', width: '300px'}} 
+            />
+            <CardTitle 
+              title={this.data.totals.patients.observations} 
+              subtitle="Observation"
+              style={{fontSize: '100%', float: 'left', width: '300px'}} 
+            />
+            <CardTitle 
+              title={this.data.totals.patients.ambulatory} 
+              subtitle="Ambulatory"
+              style={{fontSize: '100%', float: 'left', width: '300px'}} 
+            />
+            <br />
+
+
+             {/* <RaisedButton label="Query Endoscopy" onClick={this.queryEndoscopy.bind(this)} style={{marginRight: '20px'}} />             
              <RaisedButton label="Query Echocardiograms" onClick={this.queryEchocardiograms.bind(this)} style={{marginRight: '20px'}} />
              <RaisedButton label="Query Angiography" onClick={this.queryAngiography.bind(this)} style={{marginRight: '20px'}} />
-             <RaisedButton label="Query Cardiac MRIs" onClick={this.queryMris.bind(this)} /><br /><br />
+             <RaisedButton label="Query Cardiac MRIs" onClick={this.queryCardiacMris.bind(this)} /><br /><br /> */}
 
 
               { codeSection }
@@ -306,12 +498,14 @@ export class HelloWorldPage extends React.Component {
               <Table hover >
                 <thead>
                   <tr>
+                    <th></th>
                     <th>Identifier</th>
                     <th>Measure Description</th>
                     <th>Numerator</th>
                     <th>Denominator</th>
                     <th>Score</th>
                     <th>Pass / Fail</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
