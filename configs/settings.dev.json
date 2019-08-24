@@ -1,6 +1,7 @@
 {
   "public": {
     "title": "PatientInsight - Accreditation Utility",
+    "usePseudoCodes": true,
     "theme": {
       "showVideoBackground": false,
       "darkroomTextEnabled": false,
@@ -164,6 +165,7 @@
         "Conditions": true,
         "Devices": true,
         "DiagnosticReports": true,
+        "Encounters": true,
         "Goals": true,
         "ImagingStudies": true,
         "Immunizations": true,

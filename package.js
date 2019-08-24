@@ -1,6 +1,6 @@
 Package.describe({
     name: 'patientinsight:accreditation-utility',
-    version: '0.1.18',
+    version: '0.1.19',
     summary: 'PatientInsight - Accreditation Utility (Cardiac)',
     git: 'https://github.com/symptomatic/accreditation-utility  ',
     documentation: 'README.md'
