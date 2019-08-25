@@ -33,7 +33,7 @@ Session.setDefault('measuresArray', [{
   score: 0
 }, {
   identifier: "CM.M12a",
-  description: "Proportion of patients receiving Echocardiogram",
+  description: "Proportion of patients receiving Echocardiogram or Cardiac MRI",
   score: 0
 }, {
   identifier: "CM.M12b",
@@ -41,11 +41,7 @@ Session.setDefault('measuresArray', [{
   score: 0
 }, {
   identifier: "CM.M12c",
-  description: "Proportion of patients receiving Endoscopy",
-  score: 0
-}, {
-  identifier: "CM.M12d",
-  description: "Proportion of patients receiving Coronary Angiography",
+  description: "Proportion of patients receiving Echocardiogram",
   score: 0
 }, {
   identifier: "CM.M15",
@@ -321,38 +317,38 @@ export class AccreditationScorecardPage extends React.Component {
     })
 
   }
-  queryEndoscopy(){
-    console.log('queryEndoscopy')
+  // queryEndoscopy(){
+  //   console.log('queryEndoscopy')
 
-    let dateQuery = this.generateDateQuery('_has:Procedure');   
+  //   let dateQuery = this.generateDateQuery('_has:Procedure');   
 
-    Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=112790001&' + dateQuery + '&apikey=');
-    this.queryEndpoint(this, 'endoscopy');
-  }
-  queryEchocardiograms(){
-    console.log('queryEchocardiograms')
+  //   Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=112790001&' + dateQuery + '&apikey=');
+  //   this.queryEndpoint(this, 'endoscopy');
+  // }
+  // queryEchocardiograms(){
+  //   console.log('queryEchocardiograms')
 
-    let dateQuery = this.generateDateQuery('_has:Procedure');   
+  //   let dateQuery = this.generateDateQuery('_has:Procedure');   
     
-    Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=40701008&apikey=');
-    this.queryEndpoint(this, 'echo');
-  }
-  queryAngiography(){
-    console.log('queryAngiography')
+  //   Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=40701008&apikey=');
+  //   this.queryEndpoint(this, 'echo');
+  // }
+  // queryAngiography(){
+  //   console.log('queryAngiography')
     
-    let dateQuery = this.generateDateQuery('_has:Procedure');   
+  //   let dateQuery = this.generateDateQuery('_has:Procedure');   
     
-    Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=33367005&apikey=');
-    this.queryEndpoint(this, 'angio');
-  }
-  queryCardiacMris(){
-    console.log('queryCardiacMris')
+  //   Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=33367005&apikey=');
+  //   this.queryEndpoint(this, 'angio');
+  // }
+  // queryCardiacMris(){
+  //   console.log('queryCardiacMris')
     
-    let dateQuery = this.generateDateQuery('_has:Procedure');   
+  //   let dateQuery = this.generateDateQuery('_has:Procedure');   
     
-    Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=241620005&apikey=');
-    this.queryEndpoint(this, 'mri');
-  }
+  //   Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=241620005&apikey=');
+  //   this.queryEndpoint(this, 'mri');
+  // }
   queryPatients(){
     console.log('queryPatients')
     Session.set('fhirQueryUrl', '/Patient?apikey=');
@@ -646,6 +642,8 @@ export class AccreditationScorecardPage extends React.Component {
   runAction(identifier, foo, bar){
     //console.log('runAction', identifier)
 
+    let self = this;
+
     let measures = Session.get('measuresArray');
     let encounters_with_heartfailure = Session.get('encounters_with_heartfailure');
 
@@ -667,18 +665,92 @@ export class AccreditationScorecardPage extends React.Component {
         break;
       case "CM.M12a":
         console.log('Running algorithm 12a')
+        console.log('Trying to find the number of Echocardiograms and Cardiac MRIs procedures...')
 
-        measures[2].numerator = 0;
-        measures[2].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
-        measures[2].score =  ((measures[2].numerator /  measures[2].denominator) * 100).toFixed(2) + '%';
+        // trying to find the number of Echocardiograms and Cardiac MRIs procedures
 
+        // so let's set up some counters;
+        console.log('Setting up counters...')
+
+        // we also want to clear the Procedures collection, where we'll be storing the resources
+        console.log('Removing procedures...')
+        Procedures.remove({});
+
+        // lets determine the procedure list to query
+        let procedureList = "40701008,241620005";
+        if(Session.get('usePseudoCodes')){
+          console.log('Using psueduo codes.  To disable; please edit the settings file.')
+          procedureList = procedureList + ",80146002" // Appendectomy
+        }
+        console.log('Generated procedure list to search for', procedureList)
+
+        let results = {
+          echocardiogramCount: 0,
+          cardiacMriCount: 0,
+          mixedCount: 0
+        }
+
+        // we begin looping through each of the encounters
+        Encounters.find().forEach(async function(encounter){
+          console.log('Found a subject reference...', get(encounter, 'subject.reference'));
+
+          if(get(encounter, 'subject.reference')){
+
+            let patientProceduresUrl = self.data.endpoint +  "/Procedure?patient=" + get(encounter, 'subject.reference') + '&_count=1000&apikey=' + self.data.apiKey;
+            console.log('Generating the patientProceduresUrl...', patientProceduresUrl);
+
+
+
+            await Meteor.call("queryEndpoint", patientProceduresUrl, function(error, result){
+              let parsedResults = JSON.parse(result.content);
+              console.log('Received a list of Procedures for this patient:  ', parsedResults)
+
+
+          
+              parsedResults.entry.forEach(function(entry){
+
+                if(get(entry, 'resource.code.coding[0].code') === "40701008"){
+                  console.log('Found an echocardiogram...')                  
+                  results.echocardiogramCount++;
+                }
+                if(get(entry, 'resource.code.coding[0].code') === "241620005"){
+                  console.log('Found a Cardiac MRI...')                  
+                  results.cardiacMriCount++;
+                }
+
+                if(procedureList.includes(get(entry, 'resource.code.coding[0].code'))){
+                  console.log('Found an Echocardiogram or Cardiac MRI...')                  
+                  results.mixedCount++;
+                }
+
+                console.log('Adding entry to Procedures collection: ', get(entry, 'resource'));
+                Procedures.insert(get(entry, 'resource'));
+              })  
+              
+              measures[2].numerator = results.mixedCount;
+              measures[2].denominator =  encounters_with_heartfailure.inpatient;
+              measures[2].score =  ((measures[2].numerator /  measures[2].denominator) * 100).toFixed(2) + '%';
+
+              Session.set('measuresArray', measures);
+
+            })
+          }
+        }) 
+
+
+
+        // measures[2].numerator = returnedResults.mixedCount;
+        // measures[2].denominator =  encounters_with_heartfailure.inpatient;
+        // measures[2].score =  ((measures[2].numerator /  measures[2].denominator) * 100).toFixed(2) + '%';
+
+        // Session.set('measuresArray', measures);
 
         // this.queryEchocardiograms();
         break;
       case "CM.M12b":
         console.log('Running algorithm 12b')      
         measures[3].numerator = 0;
-        measures[3].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
+        measures[3].denominator =  encounters_with_heartfailure.inpatient;
         measures[3].score =  ((measures[3].numerator /  measures[3].denominator) * 100).toFixed(2) + '%';
 
         // this.queryCardiacMris();         
@@ -687,19 +759,10 @@ export class AccreditationScorecardPage extends React.Component {
         console.log('Running algorithm 12c')  
 
         measures[4].numerator = 0;
-        measures[4].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
+        measures[4].denominator =  encounters_with_heartfailure.inpatient;
         measures[4].score =  ((measures[4].numerator /  measures[4].denominator) * 100).toFixed(2) + '%';
 
         // this.queryEndoscopy();         
-        break;
-      case "CM.M12d":
-        console.log('Running algorithm 12d')       
-
-        measures[5].numerator = 0;
-        measures[5].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
-        measures[5].score =  ((measures[5].numerator /  measures[5].denominator) * 100).toFixed(2) + '%';
-
-        // this.queryAngiography();
         break;
       case "CM.M15":
         console.log('Running algorithm 15')                    
