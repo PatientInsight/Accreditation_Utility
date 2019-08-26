@@ -101,9 +101,9 @@
       "integrity": "sha512-KvU92czp2/qse5tUfGms6Kjig0AhHOwkzXG0+PqIJB3ke0WUv088AHMZI0OssO9NCkXt4RP8yju9rpH8aGB7Lw=="
     },
     "d3-scale-chromatic": {
-      "version": "1.4.0",
-      "resolved": "https://registry.npmjs.org/d3-scale-chromatic/-/d3-scale-chromatic-1.4.0.tgz",
-      "integrity": "sha512-0vyEt8ZqhdgzC+IvdkJZL7fc3k7UZyJvMxR3zvU312z/HilJ0N+WSY3099jAxdfhe99ak9VhcK1ChDVVGc8Q0Q=="
+      "version": "1.5.0",
+      "resolved": "https://registry.npmjs.org/d3-scale-chromatic/-/d3-scale-chromatic-1.5.0.tgz",
+      "integrity": "sha512-ACcL46DYImpRFMBcpk9HhtIyC7bTBR4fNOPxwVSl0LfulDAwyiHyPOTqcDG1+t5d4P9W7t/2NAuWu59aKko/cg=="
     },
     "d3-shape": {
       "version": "1.3.5",
@@ -388,6 +388,11 @@
       "version": "2.20.1",
       "resolved": "https://registry.npmjs.org/moment/-/moment-2.20.1.tgz",
       "integrity": "sha512-Yh9y73JRljxW5QxN08Fner68eFLxM5ynNOAw2LbIB1YAGeQzZT8QFSUvkAz609Zf+IHhhaUxqZK8dG3W/+HEvg=="
+    },
+    "moment-timezone": {
+      "version": "0.5.26",
+      "resolved": "https://registry.npmjs.org/moment-timezone/-/moment-timezone-0.5.26.tgz",
+      "integrity": "sha512-sFP4cgEKTCymBBKgoxZjYzlSovC20Y6J7y3nanDc5RoBIXKlZhoYwBoZGe3flwU6A372AcRwScH8KiwV6zjy1g=="
     },
     "mongo-object": {
       "version": "0.1.3",

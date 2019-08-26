@@ -647,6 +647,8 @@ export class AccreditationScorecardPage extends React.Component {
     let measures = Session.get('measuresArray');
     let encounters_with_heartfailure = Session.get('encounters_with_heartfailure');
 
+
+
     switch (identifier) {
       case "CM.M1":
         console.log('Running algorithm 1')   
@@ -690,11 +692,19 @@ export class AccreditationScorecardPage extends React.Component {
           mixedCount: 0
         }
 
+
+          
+
         // we begin looping through each of the encounters
         Encounters.find().forEach(async function(encounter){
-          console.log('Found a subject reference...', get(encounter, 'subject.reference'));
+          console.log('Parsing an encounter...', get(encounter, 'id'));
 
           if(get(encounter, 'subject.reference')){
+            console.log('Found a subject reference...', get(encounter, 'subject.reference'));
+
+            let startDate = get(encounter, 'period.start')
+            let endDate = get(encounter, 'period.end')
+          
 
             let patientProceduresUrl = self.data.endpoint +  "/Procedure?patient=" + get(encounter, 'subject.reference') + '&_count=1000&apikey=' + self.data.apiKey;
             console.log('Generating the patientProceduresUrl...', patientProceduresUrl);
@@ -707,24 +717,68 @@ export class AccreditationScorecardPage extends React.Component {
 
 
           
-              parsedResults.entry.forEach(function(entry){
+              parsedResults.entry.forEach(function(procedureEntry){
 
-                if(get(entry, 'resource.code.coding[0].code') === "40701008"){
-                  console.log('Found an echocardiogram...')                  
-                  results.echocardiogramCount++;
+                if(get(procedureEntry, 'resource.code.coding[0].code') === "40701008"){
+                  console.log('Found an echocardiogram.  Checking when it was performed....')     
+                  // if(moment(moment(get(procedureEntry, 'resource.performedPeriod.start')).toISOString()).isBetween(
+                  //   moment(get(encounter, 'period.start')).toISOString(), 
+                  //   moment(get(encounter, 'period.end')).toISOString(),
+                  //   null, '[]'
+                  // )){
+                  if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'resource.id'))){
+                    console.log('Found a valid echocardiogram...')                  
+                    results.echocardiogramCount++;
+                  }
                 }
-                if(get(entry, 'resource.code.coding[0].code') === "241620005"){
-                  console.log('Found a Cardiac MRI...')                  
-                  results.cardiacMriCount++;
+                if(get(procedureEntry, 'resource.code.coding[0].code') === "241620005"){
+                  console.log('Found a Cardiac MRI.  Checking when it was performed....')     
+                  // if(moment(moment(get(procedureEntry, 'resource.performedPeriod.start')).toISOString()).isBetween(
+                  //   moment(get(encounter, 'period.start')).toISOString(), 
+                  //   moment(get(encounter, 'period.end')).toISOString(),
+                  //   null, '[]'
+                  // )){
+                  if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'resource.id'))){
+                    console.log('Found a valid Cardiac MRI...')                  
+                    results.cardiacMriCount++;
+                  }
                 }
 
-                if(procedureList.includes(get(entry, 'resource.code.coding[0].code'))){
-                  console.log('Found an Echocardiogram or Cardiac MRI...')                  
-                  results.mixedCount++;
+                // we want Cardiac MRI, Echochardiogram, and any other pseudocodes
+                if(procedureList.includes(get(procedureEntry, 'resource.code.coding[0].code'))){
+                  console.log('Found a Cardiac MRI, Echocardiogram, or a Pseudocode.  Checking when it was performed....')                    
+
+                  console.log("get(procedureEntry, 'resource.context.reference')", get(procedureEntry, 'resource.context.reference'))
+                  console.log("get(encounter, 'resource.id')", "Encounter/" + get(encounter, 'resource.id'))
+
+                  // let performedPeriodStart = momentTimezone(get(procedureEntry, 'resource.performedPeriod.start'))
+                  // console.log('performedPeriodStart.momentTimezone', performedPeriodStart.tz("Europe/London"))
+
+                  // need to check timezone
+                  // if(moment(moment(get(procedureEntry, 'resource.performedPeriod.start')).toISOString()).isBetween(
+                  //   moment(get(encounter, 'period.start').toISOString()), 
+                  //   moment(get(encounter, 'period.end').toISOString()),
+                  //   null, '[]'
+                  // )){
+
+                  if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'id'))){
+                    console.log('Echocardiogram or Cardiac MRI or Pseudocode is Valid!')                  
+                    // skipping some things like 'Documentation of current medications'
+                    if(!['428191000124101'].includes(get(procedureEntry, 'resource.code.coding[0].code'))){
+                      
+                      // lets check for duplicates; we may be receiving different versions of the resource
+                      if(Procedures.findOne({id: get(procedureEntry, 'resource.id')})){
+                        console.log('Upserting procedureEntry to Procedures collection: ', get(procedureEntry, 'resource'));
+                        Procedures.upsert({id: get(procedureEntry, 'resource.id')}, {$set: get(procedureEntry, 'resource') });    
+                      } else {
+                        console.log('Adding entry to Procedures collection and updating count: ', get(procedureEntry, 'resource'));
+                        results.mixedCount++;
+                        Procedures.insert(get(procedureEntry, 'resource'));    
+                      }
+                    }
+                  }
                 }
 
-                console.log('Adding entry to Procedures collection: ', get(entry, 'resource'));
-                Procedures.insert(get(entry, 'resource'));
               })  
               
               measures[2].numerator = results.mixedCount;
@@ -885,43 +939,43 @@ export class AccreditationScorecardPage extends React.Component {
 
              <hr />
 
+            <CardTitle 
+                title={ get(this, 'data.totals.encounters.discharged_with_heartfailure') } 
+                subtitle="Encounters (Heartfailure)"
+                style={{fontSize: '100%', float: 'left', width: '200px'}} 
+              />                
 
-             <div style={{width: '100%', height: '60px'}}>
+             <div style={{width: '100%', height: '60px', position: 'absolute'}}>
                 <CardTitle 
                   title={ get(this, 'data.totals.encounters.total') } 
                   subtitle="Encounters (Total)"
-                  style={{fontSize: '100%', float: 'left', width: '200px'}} 
+                  style={{fontSize: '100%', float: 'right', width: '200px'}} 
                 />
                 <CardTitle 
                   title={ get(this, 'data.totals.encounters.inpatients') } 
                   subtitle="Encounters (Inpatients)"
-                  style={{fontSize: '100%', float: 'left', width: '200px'}} 
+                  style={{fontSize: '100%', float: 'right', width: '200px'}} 
                 />
                 <CardTitle 
                   title={ get(this, 'data.totals.encounters.observations') } 
                   subtitle="Encounters (Observational)"
-                  style={{fontSize: '100%', float: 'left', width: '200px'}} 
+                  style={{fontSize: '100%', float: 'right', width: '200px'}} 
                 />
                 <CardTitle 
                   title={ get(this, 'data.totals.encounters.ambulatory') } 
                   subtitle="Encounters (Ambulatory)"
-                  style={{fontSize: '100%', float: 'left', width: '200px'}} 
+                  style={{fontSize: '100%', float: 'right', width: '200px'}} 
                 />
                 <CardTitle 
                   title={ get(this, 'data.totals.encounters.emergency') } 
                   subtitle="Encounters (Emergency)"
-                  style={{fontSize: '100%', float: 'left', width: '200px'}} 
+                  style={{fontSize: '100%', float: 'right', width: '200px'}} 
                 />
                 <CardTitle 
                   title={ get(this, 'data.totals.encounters.discharged') } 
                   subtitle="Encounters (Discharged)"
-                  style={{fontSize: '100%', float: 'left', width: '200px'}} 
+                  style={{fontSize: '100%', float: 'right', width: '200px'}} 
                 />
-                <CardTitle 
-                  title={ get(this, 'data.totals.encounters.discharged_with_heartfailure') } 
-                  subtitle="Encounters (Heartfailure)"
-                  style={{fontSize: '100%', float: 'left', width: '200px'}} 
-                />                
              </div>
             <br />
 

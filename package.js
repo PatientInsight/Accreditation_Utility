@@ -1,6 +1,6 @@
 Package.describe({
     name: 'patientinsight:accreditation-utility',
-    version: '0.1.19',
+    version: '0.1.20',
     summary: 'PatientInsight - Accreditation Utility (Cardiac)',
     git: 'https://github.com/symptomatic/accreditation-utility  ',
     documentation: 'README.md'
@@ -39,6 +39,7 @@ Package.onUse(function(api) {
 
 Npm.depends({
     "moment": "2.20.1",
+    "moment-timezone": "0.5.26",
     "lodash": "4.17.4",
     "react": "16.2.0",
     "react-dom": "16.4.1",
