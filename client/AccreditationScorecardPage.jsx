@@ -740,7 +740,7 @@ export class AccreditationScorecardPage extends React.Component {
                   // )){
                   if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'resource.id'))){
                     console.log('Found a valid Cardiac MRI...')                  
-                    results.cardiacMriCount++;
+                    results.echocardiogramCount++;
                   }
                 }
 
@@ -785,21 +785,19 @@ export class AccreditationScorecardPage extends React.Component {
               measures[2].denominator =  encounters_with_heartfailure.inpatient;
               measures[2].score =  ((measures[2].numerator /  measures[2].denominator) * 100).toFixed(2) + '%';
 
-              Session.set('measuresArray', measures);
+              measures[3].numerator = results.echocardiogramCount;
+              measures[3].denominator =  encounters_with_heartfailure.inpatient;
+              measures[3].score =  ((measures[3].numerator /  measures[3].denominator) * 100).toFixed(2) + '%';
 
+              measures[4].numerator = results.echocardiogramCount;
+              measures[4].denominator =  encounters_with_heartfailure.inpatient;
+              measures[4].score =  ((measures[4].numerator /  measures[4].denominator) * 100).toFixed(2) + '%';
+
+              Session.set('measuresArray', measures);
             })
           }
         }) 
 
-
-
-        // measures[2].numerator = returnedResults.mixedCount;
-        // measures[2].denominator =  encounters_with_heartfailure.inpatient;
-        // measures[2].score =  ((measures[2].numerator /  measures[2].denominator) * 100).toFixed(2) + '%';
-
-        // Session.set('measuresArray', measures);
-
-        // this.queryEchocardiograms();
         break;
       case "CM.M12b":
         console.log('Running algorithm 12b')      
