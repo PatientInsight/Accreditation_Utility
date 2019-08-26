@@ -639,7 +639,7 @@ export class AccreditationScorecardPage extends React.Component {
   rowClick(id){
     //console.log('rowClick', id)
   }
-  runAction(identifier, foo, bar){
+  async runAction(identifier, foo, bar){
     //console.log('runAction', identifier)
 
     let self = this;
@@ -647,7 +647,8 @@ export class AccreditationScorecardPage extends React.Component {
     let measures = Session.get('measuresArray');
     let encounters_with_heartfailure = Session.get('encounters_with_heartfailure');
 
-
+    let dateQuery = this.generateDateQuery();    
+    let procedureCodes;
 
     switch (identifier) {
       case "CM.M1":
@@ -673,6 +674,11 @@ export class AccreditationScorecardPage extends React.Component {
 
         // so let's set up some counters;
         console.log('Setting up counters...')
+        let results = {
+          echocardiogramCount: 0,
+          cardiacMriCount: 0,
+          mixedCount: 0
+        }
 
         // we also want to clear the Procedures collection, where we'll be storing the resources
         console.log('Removing procedures...')
@@ -686,11 +692,6 @@ export class AccreditationScorecardPage extends React.Component {
         }
         console.log('Generated procedure list to search for', procedureList)
 
-        let results = {
-          echocardiogramCount: 0,
-          cardiacMriCount: 0,
-          mixedCount: 0
-        }
 
 
           
@@ -721,11 +722,6 @@ export class AccreditationScorecardPage extends React.Component {
 
                 if(get(procedureEntry, 'resource.code.coding[0].code') === "40701008"){
                   console.log('Found an echocardiogram.  Checking when it was performed....')     
-                  // if(moment(moment(get(procedureEntry, 'resource.performedPeriod.start')).toISOString()).isBetween(
-                  //   moment(get(encounter, 'period.start')).toISOString(), 
-                  //   moment(get(encounter, 'period.end')).toISOString(),
-                  //   null, '[]'
-                  // )){
                   if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'resource.id'))){
                     console.log('Found a valid echocardiogram...')                  
                     results.echocardiogramCount++;
@@ -733,11 +729,6 @@ export class AccreditationScorecardPage extends React.Component {
                 }
                 if(get(procedureEntry, 'resource.code.coding[0].code') === "241620005"){
                   console.log('Found a Cardiac MRI.  Checking when it was performed....')     
-                  // if(moment(moment(get(procedureEntry, 'resource.performedPeriod.start')).toISOString()).isBetween(
-                  //   moment(get(encounter, 'period.start')).toISOString(), 
-                  //   moment(get(encounter, 'period.end')).toISOString(),
-                  //   null, '[]'
-                  // )){
                   if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'resource.id'))){
                     console.log('Found a valid Cardiac MRI...')                  
                     results.echocardiogramCount++;
@@ -751,15 +742,6 @@ export class AccreditationScorecardPage extends React.Component {
                   console.log("get(procedureEntry, 'resource.context.reference')", get(procedureEntry, 'resource.context.reference'))
                   console.log("get(encounter, 'resource.id')", "Encounter/" + get(encounter, 'resource.id'))
 
-                  // let performedPeriodStart = momentTimezone(get(procedureEntry, 'resource.performedPeriod.start'))
-                  // console.log('performedPeriodStart.momentTimezone', performedPeriodStart.tz("Europe/London"))
-
-                  // need to check timezone
-                  // if(moment(moment(get(procedureEntry, 'resource.performedPeriod.start')).toISOString()).isBetween(
-                  //   moment(get(encounter, 'period.start').toISOString()), 
-                  //   moment(get(encounter, 'period.end').toISOString()),
-                  //   null, '[]'
-                  // )){
 
                   if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'id'))){
                     console.log('Echocardiogram or Cardiac MRI or Pseudocode is Valid!')                  
@@ -778,6 +760,21 @@ export class AccreditationScorecardPage extends React.Component {
                     }
                   }
                 }
+
+                // // you can comment this section out
+                // if(!['428191000124101'].includes(get(procedureEntry, 'resource.code.coding[0].code'))){
+
+                //   // lets check for duplicates; we may be receiving different versions of the resource
+                //   if(Procedures.findOne({id: get(procedureEntry, 'resource.id')})){
+                //     console.log('Upserting procedureEntry to Procedures collection: ', get(procedureEntry, 'resource'));
+                //     Procedures.upsert({id: get(procedureEntry, 'resource.id')}, {$set: get(procedureEntry, 'resource') });    
+                //   } else {
+                //     console.log('Adding entry to Procedures collection and updating count: ', get(procedureEntry, 'resource'));
+                //     results.mixedCount++;
+                //     Procedures.insert(get(procedureEntry, 'resource'));    
+                //   }
+                // }
+
 
               })  
               
@@ -818,12 +815,302 @@ export class AccreditationScorecardPage extends React.Component {
         break;
       case "CM.M15":
         console.log('Running algorithm 15')                    
+        console.log('Door to ECG time Median time from arrival to ECG performed.s...')
+
+        console.log('Door to therapy time for nitroglycerin or other vasodilator during early stabilization...')
+
+        // so let's set up some counters;
+        console.log('Setting up counters...')
+        let results15 = {
+          duration: 0,
+          hours: 0,
+          minutes: 0,
+          count: 0
+        }
+
+        procedureCodes = "169690007"; // ECG (TBD)
+
+        if(Session.get('usePseudoCodes')){
+          console.log('Using psueduo codes.  To disable; please edit the settings file.')
+          // procedureCodes = procedureCodes + ",74016001,168594001,268425006" // Radiology
+          procedureCodes = procedureCodes + ",271442997" // Fetal Anatomy Count
+          // procedureCodes = procedureCodes + ",74016001" // Radiology
+          // procedureCodes = procedureCodes + ",66348005" // Childbirth
+        }
+
+        let ecgEncounterUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
+        console.log('Generating the ecgEncounterUrl...', ecgEncounterUrl);
+
+        await Meteor.call("queryEndpoint", ecgEncounterUrl, function(error, result){
+          let parsedResults = JSON.parse(result.content);
+          console.log('Received ' + parsedResults.total + ' matching procedures.')
+          measures[6].numerator = parsedResults.total;
+
+          if(parsedResults.entry){
+            parsedResults.entry.forEach(async function(procedure){
+
+              let ecgProcedureUrl = self.data.endpoint +  "/" + get(procedure, 'resource.context.reference') + "?apikey=" + self.data.apiKey;
+              console.log('ecgProcedureUrl', ecgProcedureUrl);
+
+              Meteor.setTimeout(await Meteor.call("queryEndpoint", ecgProcedureUrl, function(error, result){
+                if(result){
+                  let vasoEncounter = JSON.parse(result.content);
+                  console.log('vasoEncounter', vasoEncounter)
+                  console.log('vasoProcedure', procedure)
+  
+                  let encounterStartTime = moment(get(vasoEncounter, 'period.start'));
+                  let procedureStartTime = moment(get(procedure, 'resource.performedPeriod.start'));
+  
+                  console.log('  -- encounter start time:  ' + encounterStartTime);
+                  console.log('  -- procedure start time:  ' + procedureStartTime);
+  
+                  let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
+                  console.log('  -- duration:              ' + duration);
+  
+                  let minutes = duration.asMinutes();
+                  let hours = duration.asHours();
+  
+                  console.log('  -- minutes:               ' + minutes);
+                  console.log('  -- hours:                 ' + hours);
+  
+                  results15.minutes = results15.minutes + minutes;
+                  results15.hours = results15.hours + hours;
+                  results15.duration = results15.duration + duration;
+                  results15.count = results15.count + 1;
+
+
+                  let measuresArray15 = Session.get('measuresArray');
+                  console.log('measuresArray15', measuresArray15)
+
+                  measuresArray15[5].numerator = parsedResults.total;
+                  measuresArray15[5].denominator =  "";
+                  measuresArray15[5].score =  (results15.minutes / results15.count).toFixed(0) + ' mins'; // this is just a basic average
+        
+                  Session.set('measuresArray', measuresArray15);
+        
+                }
+              }), 50);              
+            })  
+          }
+        })
+
+        // // so let's set up some counters;
+        // console.log('Setting up counters...')
+        // let results15 = {
+        //   duration: 0,
+        //   hours: 0,
+        //   minutes: 0,
+        //   count: 0
+        // }
+
+        // // we begin looping through each of the encounters
+        // Encounters.find().forEach(async function(encounter){
+        //   //console.log('Parsing an encounter...', get(encounter, 'id'));
+
+        //   let encounterProceduresUrl = self.data.endpoint +  "/Procedure?encounter=Encounter/" + get(encounter, 'id') + '&_count=1000&apikey=' + self.data.apiKey;
+        //   //console.log('Generating the encounterProceduresUrl...', encounterProceduresUrl);
+
+        //   await Meteor.call("queryEndpoint", encounterProceduresUrl, function(error, result){
+        //     let parsedResults = JSON.parse(result.content);
+        //     //console.log('Received a list of Procedures for this encounter:  ', parsedResults)
+
+        //     console.log(parsedResults.total + ' procedures in encounter ' + get(encounter, 'id'));
+        
+        //     if(parsedResults.entry){
+
+        //       parsedResults.entry.forEach(function(procedure){
+
+        //         let startTime = moment(get(encounter, 'period.start'));
+        //         let endTime = moment(get(procedure, 'resource.performedPeriod.start'));
+
+        //         console.log('  -- encounter start time:  ' + startTime);
+        //         console.log('  -- procedure start time:  ' + endTime);
+  
+        //         let duration = moment.duration(endTime.diff(startTime));
+        //         console.log('  -- duration:              ' + duration);
+
+        //         let minutes = duration.asMinutes();
+        //         let hours = duration.asHours();
+
+        //         console.log('  -- minutes:               ' + minutes);
+        //         console.log('  -- hours:                 ' + hours);
+
+        //         results15.minutes = results15.minutes + minutes;
+        //         results15.hours = results15.hours + hours;
+        //         results15.duration = results15.duration + duration;
+        //         results15.count = results15.count + 1;
+
+        //       })  
+        //     }
+
+        //     measures[5].numerator = results15.minutes;
+        //     measures[5].denominator =  results15.count;
+        //     measures[5].score =  (results15.minutes / results15.count).toFixed(0) + ' mins'; // this is just a basic average
+
+        //     Session.set('measuresArray', measures);
+        //   })
+        // })
+
         break;
       case "CM.M17":
-        console.log('Running algorithm 17')                          
+        console.log('Running algorithm 17')   
+        console.log('Door to therapy time for nitroglycerin or other vasodilator during early stabilization...')
+
+        // so let's set up some counters;
+        console.log('Setting up counters...')
+        let results17 = {
+          duration: 0,
+          hours: 0,
+          minutes: 0,
+          count: 0
+        }
+
+        procedureCodes = "80146002"; // vasodialator (TBD)
+
+        if(Session.get('usePseudoCodes')){
+          console.log('Using psueduo codes.  To disable; please edit the settings file.')
+          // procedureCodes = procedureCodes + ",74016001,168594001,268425006" // Radiology
+          procedureCodes = procedureCodes + ",74016001" // Radiology
+          // procedureCodes = procedureCodes + ",66348005" // Childbirth
+        }
+
+        let vasodilaterUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
+        console.log('Generating the vasodilaterUrl...', vasodilaterUrl);
+
+        await Meteor.call("queryEndpoint", vasodilaterUrl, function(error, result){
+          let parsedResults = JSON.parse(result.content);
+          console.log('Received ' + parsedResults.total + ' matching procedures.')
+          measures[6].numerator = parsedResults.total;
+
+          if(parsedResults.entry){
+            parsedResults.entry.forEach(async function(procedure){
+
+              let vasoEncounterUrl = self.data.endpoint +  "/" + get(procedure, 'resource.context.reference') + "?apikey=" + self.data.apiKey;
+              console.log('vasoEncounterUrl', vasoEncounterUrl);
+
+              Meteor.setTimeout(await Meteor.call("queryEndpoint", vasoEncounterUrl, function(error, result){
+                if(result){
+                  let vasoEncounter = JSON.parse(result.content);
+                  console.log('vasoEncounter', vasoEncounter)
+                  console.log('vasoProcedure', procedure)
+  
+                  let encounterStartTime = moment(get(vasoEncounter, 'period.start'));
+                  let procedureStartTime = moment(get(procedure, 'resource.performedPeriod.start'));
+  
+                  console.log('  -- encounter start time:  ' + encounterStartTime);
+                  console.log('  -- procedure start time:  ' + procedureStartTime);
+  
+                  let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
+                  console.log('  -- duration:              ' + duration);
+  
+                  let minutes = duration.asMinutes();
+                  let hours = duration.asHours();
+  
+                  console.log('  -- minutes:               ' + minutes);
+                  console.log('  -- hours:                 ' + hours);
+  
+                  results17.minutes = results17.minutes + minutes;
+                  results17.hours = results17.hours + hours;
+                  results17.duration = results17.duration + duration;
+                  results17.count = results17.count + 1;
+
+
+                  let measuresArray17 = Session.get('measuresArray');
+                  console.log('measuresArray17', measuresArray17)
+
+                  measuresArray17[6].numerator = parsedResults.total;
+                  measuresArray17[6].denominator =  "";
+                  measuresArray17[6].score =  (results17.minutes / results17.count).toFixed(0) + ' mins'; // this is just a basic average
+        
+                  Session.set('measuresArray', measuresArray17);
+        
+                }
+              }), 50);              
+            })  
+          }
+        })
+
         break;
       case "CM.M18":
-        console.log('Running algorithm 18')                            
+        console.log('Running algorithm 18')   
+        console.log('Door to IV therapy time for diuretic during early stabilization...')
+
+
+        // so let's set up some counters;
+        console.log('Setting up counters...')
+        let results18 = {
+          duration: 0,
+          hours: 0,
+          minutes: 0,
+          count: 0
+        }
+
+        procedureCodes = "80146002"; // IV Therapy (TBD)
+
+        if(Session.get('usePseudoCodes')){
+          console.log('Using psueduo codes.  To disable; please edit the settings file.')
+          // procedureCodes = procedureCodes + ",74016001,168594001,268425006" // Radiology
+          //procedureCodes = procedureCodes + ",74016001" // Radiology
+          procedureCodes = procedureCodes + ",44608003" // BloodTyping
+        }
+
+        let ivTherapyUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
+        console.log('Generating the ivTherapyUrl...', ivTherapyUrl);
+
+        await Meteor.call("queryEndpoint", ivTherapyUrl, function(error, result){
+          let parsedResults = JSON.parse(result.content);
+          console.log('Received ' + parsedResults.total + ' matching procedures.')
+          measures[6].numerator = parsedResults.total;
+
+          if(parsedResults.entry){
+            parsedResults.entry.forEach(async function(procedure){
+
+              let ivEncounterUrl = self.data.endpoint +  "/" + get(procedure, 'resource.context.reference') + "?apikey=" + self.data.apiKey;
+              console.log('ivEncounterUrl', ivEncounterUrl);
+
+              Meteor.setTimeout(await Meteor.call("queryEndpoint", ivEncounterUrl, function(error, result){
+                if(result){
+                  let vasoEncounter = JSON.parse(result.content);
+                  console.log('vasoEncounter', vasoEncounter)
+                  console.log('vasoProcedure', procedure)
+  
+                  let encounterStartTime = moment(get(vasoEncounter, 'period.start'));
+                  let procedureStartTime = moment(get(procedure, 'resource.performedPeriod.start'));
+  
+                  console.log('  -- encounter start time:  ' + encounterStartTime);
+                  console.log('  -- procedure start time:  ' + procedureStartTime);
+  
+                  let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
+                  console.log('  -- duration:              ' + duration);
+  
+                  let minutes = duration.asMinutes();
+                  let hours = duration.asHours();
+  
+                  console.log('  -- minutes:               ' + minutes);
+                  console.log('  -- hours:                 ' + hours);
+  
+                  results18.minutes = results18.minutes + minutes;
+                  results18.hours = results18.hours + hours;
+                  results18.duration = results18.duration + duration;
+                  results18.count = results18.count + 1;
+
+
+                  let measuresArray18 = Session.get('measuresArray');
+                  console.log('measuresArray18', measuresArray18)
+
+                  measuresArray18[7].numerator = parsedResults.total;
+                  measuresArray18[7].denominator =  "";
+                  measuresArray18[7].score =  (results18.minutes / results18.count).toFixed(0) + ' mins'; // this is just a basic average
+        
+                  Session.set('measuresArray', measuresArray18);
+        
+                }
+              }), 50);              
+            })  
+          }
+        })
+        
+        
         break;
       case "CM.M24":
         console.log('Running algorithm 24')                                  
