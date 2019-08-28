@@ -2,6 +2,7 @@
   "public": {
     "title": "PatientInsight - Accreditation Utility",
     "usePseudoCodes": true,
+    "apiKey": "",
     "theme": {
       "showVideoBackground": false,
       "darkroomTextEnabled": false,
@@ -159,29 +160,30 @@
         "ZygoteAvatar": true        
       },
       "fhir": {
-        "AllergyIntolerances": true,
+        "AllergyIntolerances": false,
         "AuditEvents": true,
         "BodySites": true,
-        "CarePlans": true,
+        "CarePlans": false,
         "Conditions": true,
-        "Devices": true,
+        "Devices": false,
         "DiagnosticReports": true,
+        "DocumentReference": true,
         "Encounters": true,
-        "Goals": true,
-        "ImagingStudies": true,
-        "Immunizations": true,
-        "Locations": true,
+        "Goals": false,
+        "ImagingStudies": false,
+        "Immunizations": false,
+        "Locations": false,
         "Lists": true,
-        "Medications": true,
-        "MedicationOrders": true,
-        "MedicationStatements": true,
+        "Medications": false,
+        "MedicationOrders": false,
+        "MedicationStatements": false,
         "Organizations": true,
         "Observations": true,
         "Patients": true,
-        "Practitioners": true,
+        "Practitioners": false,
         "Procedures": true,
-        "Questionnaires": true,
-        "RiskAssessments": true
+        "Questionnaires": false,
+        "RiskAssessments": false
       }
     }
   },

@@ -1,6 +1,11 @@
 import AccreditationScorecardPage from './client/AccreditationScorecardPage';
-import PostcardPage from './client/PostcardPage';
-import BodyMassIndexPage from './client/BodyMassIndexPage';
+import React from 'react';
+
+import { 
+  ScorecardButtons,
+  EncountersButtons
+} from './client/FooterButtons';
+
 
 var DynamicRoutes = [{
   'name': 'AccreditationScorecardPage',
@@ -14,4 +19,13 @@ var AdminSidebarElements = [{
   'href': '/scorecard'
 }];
 
-export { AdminSidebarElements, DynamicRoutes, AccreditationScorecardPage };
+
+let FooterButtons = [{
+  pathname: '/encounters',
+  component: <EncountersButtons />
+}, {
+  pathname: '/scorecard',
+  component: <ScorecardButtons />
+}];
+
+export { AdminSidebarElements, DynamicRoutes, AccreditationScorecardPage, FooterButtons };

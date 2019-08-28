@@ -46,5 +46,7 @@ Npm.depends({
     "nivo": "0.31.0",
     'react-katex': '2.0.2',
     "simpl-schema": "1.5.3",
-    "fhir-kit-client": "1.4.0"
+    "fhir-kit-client": "1.4.0",
+    "lossless-json": "1.0.3",
+    "json5": "2.1.0"
 })
