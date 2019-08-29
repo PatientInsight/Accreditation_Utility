@@ -59,12 +59,24 @@ Session.setDefault('measuresArray', [{
   description: "Door to IV therapy time for diuretic during early stabilization.",
   score: 0
 }, {
+  identifier: "CM.M21a",
+  description: "Patients receiving documented medication reconciliation.",
+  score: 0
+}, {
   identifier: "CM.M24",
-  description: "Observation patients receiving a Cardiology consult.",
+  description: "Patients receiving Cardiology Consult during Observation level of care.",
   score: 0
 }, {
   identifier: "CM.M27",
-  description: "Screening completion for CRT/CRT-D during Inpatient level of care stay.",
+  description: "Screening completion for cardiac resynchronization therapy CRT/CRT-D during Inpatient level of care stay.",
+  score: 0
+}, {
+  identifier: "CM.M28a",
+  description: "Documented daily physical exam.",
+  score: 0
+}, {
+  identifier: "CM.M28b",
+  description: "Documented daily assessment of intake/outtake (I/O).",
   score: 0
 }, {
   identifier: "CM.M28c",
@@ -72,7 +84,7 @@ Session.setDefault('measuresArray', [{
   score: 0
 }, {
   identifier: "CM.M29",
-  description: "Cardiology consult.",
+  description: "Patients receiving Cardiology Consult during Inpatient level of care.",
   score: 0
 }, {
   identifier: "CM.M31",
@@ -104,11 +116,25 @@ Session.setDefault('encounters_discharged_with_heartfailure', 0);
 
 Session.setDefault('patients_heartfailure', 0);
 
-
-
 Session.setDefault('start_date', '2018-08-01');
 Session.setDefault('end_date', '2018-08-01');
 
+
+let apiKey = get(Meteor, 'settings.public.interfaces.default.auth.username', '');
+let usePseudoCodes = get(Meteor, 'settings.public.usePseudoCodes', false);
+let fhirBaseUrl = get(Meteor, 'settings.public.interfaces.default.channel.endpoint', false);
+
+spliceId = function(input){
+  // console.log('spliceId.input', input)
+  if(input){
+    let spliced = input.split('/');
+    if(spliced.length > 0){
+      return spliced[1];
+    }
+  } else {
+    return false;
+  }
+}
 export class AccreditationScorecardPage extends React.Component {
   constructor(props) {
     super(props);
@@ -680,18 +706,16 @@ export class AccreditationScorecardPage extends React.Component {
   findHeartfailuresInEncounters(){
     console.log('findHeartfailuresInEncounters');
 
-    let reasonCodes = "84114007,161505003";  // Heart failure
     let heartfailureCount = 0;
 
+    let encounterReasonCodes = ["84114007","161505003"];  // Heart failure
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
-      reasonCodes = reasonCodes + ",74400008" // Appendicitis
+      encounterReasonCodes.push("74400008"); // Appendicitis
     }
 
-    Encounters.find().forEach(function(encounter){
-      if(reasonCodes.includes(get(encounter, 'reason[0].coding[0].code'))){
-        heartfailureCount++;
-      }
+    Encounters.find({'reason.coding.code': {$in: encounterReasonCodes }}).forEach(function(encounter){
+      heartfailureCount++;
     })
 
     Session.set('encounters_discharged_with_heartfailure', heartfailureCount);
@@ -704,43 +728,59 @@ export class AccreditationScorecardPage extends React.Component {
 
     let self = this;
 
-    let measures = Session.get('measuresArray');
+    let measures12a;
+
+    let measures;
     let encounters_with_heartfailure = Session.get('encounters_with_heartfailure');
 
     let dateQuery = this.generateDateQuery();    
     let procedureCodes;
 
-    let reasonCode = "12345678"  // Heart Failure
+    let lengthOfStay;
+    let totalObservations;
+    let encounterUrl;
 
+
+    let encounterReasonCodes = ["12345678"];  // Heart failure
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
-      reasonCode = "74400008" // Appendectomy
+      encounterReasonCodes.push("74400008"); // Appendicitis
     }
-    console.log('Searching for reason code ' + reasonCode)
+
+    console.log('Searching for reason code ' + encounterReasonCodes)
 
     switch (identifier) {
       case "CM.M1":
         console.log('Running algorithm 1')   
 
-        measures[0].numerator = Encounters.find({$and: [
+        let measures1 = Session.get('measuresArray');
+
+        measures1[0].numerator = Encounters.find({$and: [
           {'class.code': 'emergency'},
-          {'reason.coding.code': reasonCode}
+          {'reason.coding.code': {$in: encounterReasonCodes }}
         ]}).count();
 
-        measures[0].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
-        measures[0].score =  ((measures[0].numerator /  measures[0].denominator) * 100).toFixed(2) + '%';
+        measures1[0].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
+        measures1[0].score =  ((measures1[0].numerator /  measures1[0].denominator) * 100).toFixed(2) + '%';
+
+        Session.set('measuresArray', measures1);
+
         break;
       case "CM.M2":
         console.log('Running algorithm 2')      
 
-        measures[1].numerator = Encounters.find({$and: [
+        let measures2 = Session.get('measuresArray');
+
+        measures2[1].numerator = Encounters.find({$and: [
           {'class.code': 'inpatient'},
-          {'reason.coding.code': reasonCode}
+          {'reason.coding.code': {$in: encounterReasonCodes }}
         ]}).count();
 
-        // measures[1].numerator = encounters_with_heartfailure.inpatient;
-        measures[1].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
-        measures[1].score =  ((measures[1].numerator /  measures[1].denominator) * 100).toFixed(2) + '%';
+        // measures2[1].numerator = encounters_with_heartfailure.inpatient;
+        measures2[1].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
+        measures2[1].score =  ((measures2[1].numerator /  measures2[1].denominator) * 100).toFixed(2) + '%';
+
+        Session.set('measuresArray', measures2);
 
         break;
       case "CM.M12a":
@@ -751,7 +791,7 @@ export class AccreditationScorecardPage extends React.Component {
 
         // so let's set up some counters;
         console.log('Setting up counters...')
-        let results = {
+        let results12a = {
           echocardiogramCount: 0,
           cardiacMriCount: 0,
           mixedCount: 0
@@ -759,127 +799,88 @@ export class AccreditationScorecardPage extends React.Component {
 
         // we also want to clear the Procedures collection, where we'll be storing the resources
         console.log('Removing procedures...')
-        Procedures.remove({});
+        // Procedures.remove({});
 
         // lets determine the procedure list to query
-        let procedureList = "40701008,241620005";
+        let cardiacEchoProcedureList = ["40701008","241620005"];  // Cardiac MRI, Echocardiograph
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          procedureList = procedureList + ",80146002" // Appendectomy
+          cardiacEchoProcedureList.push("80146002") // Appendectomy
         }
-        console.log('Generated procedure list to search for', procedureList)
+        console.log('Generated procedure list to search for', cardiacEchoProcedureList)
 
         // we begin looping through each of the encounters
-        Encounters.find().forEach(async function(encounter){
+        Encounters.find({$and: [
+          {'class.code': 'inpatient'},
+          {'reason.coding.code': {$in: encounterReasonCodes }}
+        ]}).forEach(async function(encounter){
           console.log('Parsing an encounter...', get(encounter, 'id'));
 
-          if(get(encounter, 'subject.reference')){
-            console.log('Found a subject reference...', get(encounter, 'subject.reference'));
+          //if(get(encounter, 'subject.reference')){
 
-            let startDate = get(encounter, 'period.start')
-            let endDate = get(encounter, 'period.end')          
+            Procedures.find({$and: [
+              {'context.reference': 'Encounter/' + get(encounter, 'id')},
+              {'code.coding.code': {$in: cardiacEchoProcedureList }}
+            ]}).forEach(function(procedure){
+              console.log('Found a procedure matching the encounter...', get(encounter, 'subject.reference'), encounter);
 
-            let patientProceduresUrl = self.data.endpoint +  "/Procedure?patient=" + get(encounter, 'subject.reference') + '&_count=1000&apikey=' + self.data.apiKey;
-            console.log('Generating the patientProceduresUrl...', patientProceduresUrl);
-
-            await Meteor.call("queryEndpoint", patientProceduresUrl, function(error, result){
-              if(result){
-                let parsedResults = JSON5.parse(result.content);
-                console.log('Received a list of Procedures for this patient:  ', parsedResults)
-                if(parsedResults.entry){
-                  parsedResults.entry.forEach(function(procedureEntry){
-  
-                    if(get(procedureEntry, 'resource.code.coding[0].code') === "40701008"){
-                      console.log('Found an echocardiogram.  Checking when it was performed....')     
-                      if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'resource.id'))){
-                        console.log('Found a valid echocardiogram...')                  
-                        results.echocardiogramCount++;
-                      }
-                    }
-                    if(get(procedureEntry, 'resource.code.coding[0].code') === "241620005"){
-                      console.log('Found a Cardiac MRI.  Checking when it was performed....')     
-                      if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'resource.id'))){
-                        console.log('Found a valid Cardiac MRI...')                  
-                        results.echocardiogramCount++;
-                      }
-                    }
-    
-                    // we want Cardiac MRI, Echochardiogram, and any other pseudocodes
-                    if(procedureList.includes(get(procedureEntry, 'resource.code.coding[0].code'))){
-                      console.log('Found a Cardiac MRI, Echocardiogram, or a Pseudocode.  Checking when it was performed....')                    
-    
-                      console.log("get(procedureEntry, 'resource.context.reference')", get(procedureEntry, 'resource.context.reference'))
-                      console.log("get(encounter, 'resource.id')", "Encounter/" + get(encounter, 'resource.id'))
-    
-    
-                      if(get(procedureEntry, 'resource.context.reference') === ("Encounter/" + get(encounter, 'id'))){
-                        console.log('Echocardiogram or Cardiac MRI or Pseudocode is Valid!')                  
-                        // skipping some things like 'Documentation of current medications'
-                        if(!['428191000124101'].includes(get(procedureEntry, 'resource.code.coding[0].code'))){
-                          
-                          // lets check for duplicates; we may be receiving different versions of the resource
-                          if(Procedures.findOne({id: get(procedureEntry, 'resource.id')})){
-                            console.log('Upserting procedureEntry to Procedures collection: ', get(procedureEntry, 'resource'));
-                            Procedures.upsert({id: get(procedureEntry, 'resource.id')}, {$set: get(procedureEntry, 'resource') });    
-                          } else {
-                            console.log('Adding entry to Procedures collection and updating count: ', get(procedureEntry, 'resource'));
-                            results.mixedCount++;
-                            Procedures.insert(get(procedureEntry, 'resource'));    
-                          }
-                        }
-                      }
-                    }
-    
-                    // // you can comment this section out
-                    // if(!['428191000124101'].includes(get(procedureEntry, 'resource.code.coding[0].code'))){
-    
-                    //   // lets check for duplicates; we may be receiving different versions of the resource
-                    //   if(Procedures.findOne({id: get(procedureEntry, 'resource.id')})){
-                    //     console.log('Upserting procedureEntry to Procedures collection: ', get(procedureEntry, 'resource'));
-                    //     Procedures.upsert({id: get(procedureEntry, 'resource.id')}, {$set: get(procedureEntry, 'resource') });    
-                    //   } else {
-                    //     console.log('Adding entry to Procedures collection and updating count: ', get(procedureEntry, 'resource'));
-                    //     results.mixedCount++;
-                    //     Procedures.insert(get(procedureEntry, 'resource'));    
-                    //   }
-                    // }
-    
-                  })    
-                }
-                
-                measures[2].numerator = results.mixedCount;
-                measures[2].denominator =  Session.get('encounters_discharged_with_heartfailure');
-                measures[2].score =  ((measures[2].numerator /  measures[2].denominator) * 100).toFixed(2) + '%';
-  
-                measures[3].numerator = results.echocardiogramCount;
-                measures[3].denominator =  Session.get('encounters_discharged_with_heartfailure');
-                measures[3].score =  ((measures[3].numerator /  measures[3].denominator) * 100).toFixed(2) + '%';
-  
-                measures[4].numerator = results.echocardiogramCount;
-                measures[4].denominator =  Session.get('encounters_discharged_with_heartfailure');
-                measures[4].score =  ((measures[4].numerator /  measures[4].denominator) * 100).toFixed(2) + '%';
-  
-                Session.set('measuresArray', measures); 
+              if(["40701008"].includes(get(procedure, 'code.coding[0].code'))){
+                console.log('Found a valid echocardiogram...')                  
+                results12a.echocardiogramCount++;
               }
+              if(["241620005"].includes(get(procedure, 'code.coding[0].code'))){
+                  console.log('Found a valid Cardiac MRI...')                  
+                results12a.cardiacMriCount++;
+              }
+
+              if(cardiacEchoProcedureList.includes(get(procedure, 'code.coding[0].code'))){
+                results12a.mixedCount++;
+              }
+
+              let measures12a = Session.get('measuresArray');
+
+              measures12a[2].numerator = results12a.mixedCount;
+              measures12a[2].denominator =  Encounters.find({$and: [
+                {'class.code': 'inpatient'},
+                {'reason.coding.code': {$in: encounterReasonCodes }}
+              ]}).count();
+              measures12a[2].score =  ((measures12a[2].numerator /  measures12a[2].denominator) * 100).toFixed(2) + '%';
+      
+              measures12a[3].numerator = results12a.echocardiogramCount;
+              measures12a[3].denominator =  Encounters.find({$and: [
+                {'class.code': 'inpatient'},
+                {'reason.coding.code': {$in: encounterReasonCodes }}
+              ]}).count();
+              measures12a[3].score =  ((measures12a[3].numerator /  measures12a[3].denominator) * 100).toFixed(2) + '%';
+      
+              measures12a[4].numerator = results12a.cardiacMriCount;
+              measures12a[4].denominator =  Encounters.find({$and: [
+                {'class.code': 'inpatient'},
+                {'reason.coding.code': {$in: encounterReasonCodes }}
+              ]}).count();
+              measures12a[4].score =  ((measures12a[4].numerator /  measures12a[4].denominator) * 100).toFixed(2) + '%';
+      
+              console.log('measures12a', measures12a)
+              Session.set('measuresArray', measures12a); 
             })
-          }
-        }) 
+        });
+
 
         break;
       case "CM.M12b":
-        console.log('Running algorithm 12b')      
-        measures[3].numerator = 0;
-        measures[3].denominator =  encounters_with_heartfailure.inpatient;
-        measures[3].score =  ((measures[3].numerator /  measures[3].denominator) * 100).toFixed(2) + '%';
+        // console.log('Running algorithm 12b')      
+        // measures[3].numerator = 0;
+        // measures[3].denominator =  encounters_with_heartfailure.inpatient;
+        // measures[3].score =  ((measures[3].numerator /  measures[3].denominator) * 100).toFixed(2) + '%';
 
         // this.queryCardiacMris();         
         break;
       case "CM.M12c":
-        console.log('Running algorithm 12c')  
+        // console.log('Running algorithm 12c')  
 
-        measures[4].numerator = 0;
-        measures[4].denominator =  encounters_with_heartfailure.inpatient;
-        measures[4].score =  ((measures[4].numerator /  measures[4].denominator) * 100).toFixed(2) + '%';
+        // measures[4].numerator = 0;
+        // measures[4].denominator =  encounters_with_heartfailure.inpatient;
+        // measures[4].score =  ((measures[4].numerator /  measures[4].denominator) * 100).toFixed(2) + '%';
 
         // this.queryEndoscopy();         
         break;
@@ -887,7 +888,7 @@ export class AccreditationScorecardPage extends React.Component {
         console.log('Running algorithm 15')                    
         console.log('Door to ECG time Median time from arrival to ECG performed.s...')
 
-        console.log('Door to therapy time for nitroglycerin or other vasodilator during early stabilization...')
+        let measuresArray15;
 
         // so let's set up some counters;
         console.log('Setting up counters...')
@@ -898,130 +899,72 @@ export class AccreditationScorecardPage extends React.Component {
           count: 0
         }
 
-        procedureCodes = "169690007"; // ECG (TBD)
-
+        let procedureCodes = ["169690007"];  // ECG (TBD)
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          // procedureCodes = procedureCodes + ",74016001,168594001,268425006" // Radiology
-          procedureCodes = procedureCodes + ",271442997" // Fetal Anatomy Count
-          // procedureCodes = procedureCodes + ",74016001" // Radiology
-          // procedureCodes = procedureCodes + ",66348005" // Childbirth
+          procedureCodes.push("80146002"); // Appendectomy
         }
 
-        let ecgEncounterUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
-        console.log('Generating the ecgEncounterUrl...', ecgEncounterUrl);
+        console.log('procedureCodes', procedureCodes)
 
-        await Meteor.call("queryEndpoint", ecgEncounterUrl, function(error, result){
-          if(result){
-            let parsedResults = JSON5.parse(result.content);
-            console.log('Received ' + parsedResults.total + ' matching procedures.')
-            measures[6].numerator = parsedResults.total;
-  
-            if(parsedResults.entry){
-              parsedResults.entry.forEach(async function(procedure){
-  
-                let ecgProcedureUrl = self.data.endpoint +  "/" + get(procedure, 'resource.context.reference') + "?apikey=" + self.data.apiKey;
-                console.log('ecgProcedureUrl', ecgProcedureUrl);
-  
-                Meteor.setTimeout(await Meteor.call("queryEndpoint", ecgProcedureUrl, function(error, result){
-                  if(result){
-                    let vasoEncounter = JSON5.parse(result.content);
-                    console.log('vasoEncounter', vasoEncounter)
-                    console.log('vasoProcedure', procedure)
-    
-                    let encounterStartTime = moment(get(vasoEncounter, 'period.start'));
-                    let procedureStartTime = moment(get(procedure, 'resource.performedPeriod.start'));
-    
-                    console.log('  -- encounter start time:  ' + encounterStartTime);
-                    console.log('  -- procedure start time:  ' + procedureStartTime);
-    
-                    let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
-                    console.log('  -- duration:              ' + duration);
-    
-                    let minutes = duration.asMinutes();
-                    let hours = duration.asHours();
-    
-                    console.log('  -- minutes:               ' + minutes);
-                    console.log('  -- hours:                 ' + hours);
-    
-                    results15.minutes = results15.minutes + minutes;
-                    results15.hours = results15.hours + hours;
-                    results15.duration = results15.duration + duration;
-                    results15.count = results15.count + 1;
-  
-  
-                    let measuresArray15 = Session.get('measuresArray');
-                    console.log('measuresArray15', measuresArray15)
-  
-                    measuresArray15[5].numerator = parsedResults.total;
-                    measuresArray15[5].denominator =  "";
-                    measuresArray15[5].score =  (results15.minutes / results15.count).toFixed(0) + ' mins'; // this is just a basic average
-          
-                    Session.set('measuresArray', measuresArray15);
-          
-                  }
-                }), 50);              
-              })  
+
+        Procedures.find({'code.coding.code': {$in: procedureCodes }}).forEach(async function(procedure){
+
+          let encounterUrl = fhirBaseUrl + '/'+ get(procedure, 'context.reference') + '?apikey=' + apiKey;
+          await Meteor.call("queryEndpoint", encounterUrl, function(error, result){
+            if(error){
+              console.log('error', error)
             }
-          }
+            if(result){
+              // received some data
+              console.log('result', result)
+              let encounter = JSON5.parse(result.content);
+              if(encounter){            
+                console.log('procedure', procedure)
+                console.log('encounter', encounter)
+
+                if(encounter){
+                  let encounterStartTime = moment(get(encounter, 'period.start'));
+                  let procedureStartTime = moment(get(procedure, 'performedPeriod.start'));
+      
+                  console.log('  -- encounter start time:  ' + encounterStartTime);
+                  console.log('  -- procedure start time:  ' + procedureStartTime);
+      
+                  let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
+                  console.log('  -- duration:              ' + duration);
+      
+                  let minutes = duration.asMinutes();
+                  let hours = duration.asHours();
+      
+                  console.log('  -- minutes:               ' + minutes);
+                  console.log('  -- hours:                 ' + hours);
+      
+                  results15.minutes = results15.minutes + minutes;
+                  results15.hours = results15.hours + hours;
+                  results15.duration = results15.duration + duration;
+                  results15.count = results15.count + 1;
+      
+      
+                  // updating measures
+                  let measuresArray15 = Session.get('measuresArray');
+          
+                  measuresArray15[5].numerator = results15.minutes.toFixed(0);
+                  measuresArray15[5].denominator =  results15.count;
+          
+                  // we don't want to divide by 0
+                  if(results15.count > 0){
+                    measuresArray15[5].score =  (results15.minutes / results15.count).toFixed(0) + ' mins'; // this is just a basic average
+                  } else {
+                    measuresArray15[5].score =  '0 mins'; 
+                  }
+          
+                  console.log('measuresArray15', measuresArray15)
+                  Session.set('measuresArray', measuresArray15);
+                }
+              }
+            }
+          });
         })
-
-        // // so let's set up some counters;
-        // console.log('Setting up counters...')
-        // let results15 = {
-        //   duration: 0,
-        //   hours: 0,
-        //   minutes: 0,
-        //   count: 0
-        // }
-
-        // // we begin looping through each of the encounters
-        // Encounters.find().forEach(async function(encounter){
-        //   //console.log('Parsing an encounter...', get(encounter, 'id'));
-
-        //   let encounterProceduresUrl = self.data.endpoint +  "/Procedure?encounter=Encounter/" + get(encounter, 'id') + '&_count=1000&apikey=' + self.data.apiKey;
-        //   //console.log('Generating the encounterProceduresUrl...', encounterProceduresUrl);
-
-        //   await Meteor.call("queryEndpoint", encounterProceduresUrl, function(error, result){
-        //     let parsedResults = JSON5.parse(result.content);
-        //     //console.log('Received a list of Procedures for this encounter:  ', parsedResults)
-
-        //     console.log(parsedResults.total + ' procedures in encounter ' + get(encounter, 'id'));
-        
-        //     if(parsedResults.entry){
-
-        //       parsedResults.entry.forEach(function(procedure){
-
-        //         let startTime = moment(get(encounter, 'period.start'));
-        //         let endTime = moment(get(procedure, 'resource.performedPeriod.start'));
-
-        //         console.log('  -- encounter start time:  ' + startTime);
-        //         console.log('  -- procedure start time:  ' + endTime);
-  
-        //         let duration = moment.duration(endTime.diff(startTime));
-        //         console.log('  -- duration:              ' + duration);
-
-        //         let minutes = duration.asMinutes();
-        //         let hours = duration.asHours();
-
-        //         console.log('  -- minutes:               ' + minutes);
-        //         console.log('  -- hours:                 ' + hours);
-
-        //         results15.minutes = results15.minutes + minutes;
-        //         results15.hours = results15.hours + hours;
-        //         results15.duration = results15.duration + duration;
-        //         results15.count = results15.count + 1;
-
-        //       })  
-        //     }
-
-        //     measures[5].numerator = results15.minutes;
-        //     measures[5].denominator =  results15.count;
-        //     measures[5].score =  (results15.minutes / results15.count).toFixed(0) + ' mins'; // this is just a basic average
-
-        //     Session.set('measuresArray', measures);
-        //   })
-        // })
 
         break;
       case "CM.M17":
@@ -1037,71 +980,68 @@ export class AccreditationScorecardPage extends React.Component {
           count: 0
         }
 
-        procedureCodes = "80146002"; // vasodialator (TBD)
+        let nitroglycerinProcedureCodes = ["12345678"]; // nitroglycerin (TBD)
 
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          // procedureCodes = procedureCodes + ",74016001,168594001,268425006" // Radiology
-          procedureCodes = procedureCodes + ",74016001" // Radiology
-          // procedureCodes = procedureCodes + ",66348005" // Childbirth
+          nitroglycerinProcedureCodes.push("74016001") // Radiology
         }
 
-        let vasodilaterUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
-        console.log('Generating the vasodilaterUrl...', vasodilaterUrl);
+        Procedures.find({'code.coding.code': {$in: nitroglycerinProcedureCodes }}).forEach(async function(procedure){
 
-        await Meteor.call("queryEndpoint", vasodilaterUrl, function(error, result){
-          if(result){
-            let parsedResults = JSON5.parse(result.content);
-            console.log('Received ' + parsedResults.total + ' matching procedures.')
-            measures[6].numerator = parsedResults.total;
-
-            if(parsedResults.entry){
-              parsedResults.entry.forEach(async function(procedure){
-
-                let vasoEncounterUrl = self.data.endpoint +  "/" + get(procedure, 'resource.context.reference') + "?apikey=" + self.data.apiKey;
-                console.log('vasoEncounterUrl', vasoEncounterUrl);
-
-                Meteor.setTimeout(await Meteor.call("queryEndpoint", vasoEncounterUrl, function(error, result){
-                  if(result){
-                    let vasoEncounter = JSON5.parse(result.content);
-                    console.log('vasoEncounter', vasoEncounter)
-                    console.log('vasoProcedure', procedure)
-    
-                    let encounterStartTime = moment(get(vasoEncounter, 'period.start'));
-                    let procedureStartTime = moment(get(procedure, 'resource.performedPeriod.start'));
-    
-                    console.log('  -- encounter start time:  ' + encounterStartTime);
-                    console.log('  -- procedure start time:  ' + procedureStartTime);
-    
-                    let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
-                    console.log('  -- duration:              ' + duration);
-    
-                    let minutes = duration.asMinutes();
-                    let hours = duration.asHours();
-    
-                    console.log('  -- minutes:               ' + minutes);
-                    console.log('  -- hours:                 ' + hours);
-    
-                    results17.minutes = results17.minutes + minutes;
-                    results17.hours = results17.hours + hours;
-                    results17.duration = results17.duration + duration;
-                    results17.count = results17.count + 1;
-
-
-                    let measuresArray17 = Session.get('measuresArray');
-                    console.log('measuresArray17', measuresArray17)
-
-                    measuresArray17[6].numerator = parsedResults.total;
-                    measuresArray17[6].denominator =  "";
-                    measuresArray17[6].score =  (results17.minutes / results17.count).toFixed(0) + ' mins'; // this is just a basic average
-          
-                    Session.set('measuresArray', measuresArray17);
-          
-                  }
-                }), 50);              
-              })  
+          let encounterUrl = fhirBaseUrl + '/'+ get(procedure, 'context.reference') + '?apikey=' + apiKey;
+          await Meteor.call("queryEndpoint", encounterUrl, function(error, result){
+            if(error){
+              console.log('error', error)
             }
-          }          
+            if(result){
+              // received some data
+
+              console.log('result', result)
+              let encounter = JSON5.parse(result.content);
+              if(encounter){            
+                console.log('procedure', procedure)
+                console.log('encounter', encounter)
+    
+                let encounterStartTime = moment(get(encounter, 'period.start'));
+                let procedureStartTime = moment(get(procedure, 'performedPeriod.start'));
+    
+                console.log('  -- encounter start time:  ' + encounterStartTime);
+                console.log('  -- procedure start time:  ' + procedureStartTime);
+    
+                let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
+                console.log('  -- duration:              ' + duration);
+    
+                let minutes = duration.asMinutes();
+                let hours = duration.asHours();
+    
+                console.log('  -- minutes:               ' + minutes);
+                console.log('  -- hours:                 ' + hours);
+    
+                results17.minutes = results17.minutes + minutes;
+                results17.hours = results17.hours + hours;
+                results17.duration = results17.duration + duration;
+                results17.count = results17.count + 1;
+    
+                // updating measures
+                let measuresArray17 = Session.get('measuresArray');
+        
+                measuresArray17[6].numerator = results17.minutes.toFixed(0);
+                measuresArray17[6].denominator = results17.count;
+        
+                // we don't want to divide by 0
+                if(results17.count > 0){
+                  measuresArray17[6].score =  (results17.minutes / results17.count).toFixed(0) + ' mins'; // this is just a basic average
+                } else {
+                  measuresArray17[6].score =  '0 mins'; 
+                }
+        
+                console.log('measuresArray17', measuresArray17)
+                Session.set('measuresArray', measuresArray17);
+
+              }
+            }
+          })
         })
 
         break;
@@ -1119,75 +1059,121 @@ export class AccreditationScorecardPage extends React.Component {
           count: 0
         }
 
-        procedureCodes = "80146002"; // IV Therapy (TBD)
+        let ivTherapyProcedureCodes = ["12345678"]; // IV Therapy (TBD)
 
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          // procedureCodes = procedureCodes + ",74016001,168594001,268425006" // Radiology
-          //procedureCodes = procedureCodes + ",74016001" // Radiology
-          procedureCodes = procedureCodes + ",44608003" // BloodTyping
+          ivTherapyProcedureCodes.push("44608003") // BloodTyping
         }
 
-        let ivTherapyUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
-        console.log('Generating the ivTherapyUrl...', ivTherapyUrl);
+                // 428191000124101 // Documentation of current medications
 
-        await Meteor.call("queryEndpoint", ivTherapyUrl, function(error, result){
-          if(result){
-            let parsedResults = JSON5.parse(result.content);
-            console.log('Received ' + parsedResults.total + ' matching procedures.')
-            measures[6].numerator = parsedResults.total;
-  
-            if(parsedResults.entry){
-              parsedResults.entry.forEach(async function(procedure){
-  
-                let ivEncounterUrl = self.data.endpoint +  "/" + get(procedure, 'resource.context.reference') + "?apikey=" + self.data.apiKey;
-                console.log('ivEncounterUrl', ivEncounterUrl);
-  
-                Meteor.setTimeout(await Meteor.call("queryEndpoint", ivEncounterUrl, function(error, result){
-                  if(result){
-                    let vasoEncounter = JSON5.parse(result.content);
-                    console.log('vasoEncounter', vasoEncounter)
-                    console.log('vasoProcedure', procedure)
-    
-                    let encounterStartTime = moment(get(vasoEncounter, 'period.start'));
-                    let procedureStartTime = moment(get(procedure, 'resource.performedPeriod.start'));
-    
-                    console.log('  -- encounter start time:  ' + encounterStartTime);
-                    console.log('  -- procedure start time:  ' + procedureStartTime);
-    
-                    let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
-                    console.log('  -- duration:              ' + duration);
-    
-                    let minutes = duration.asMinutes();
-                    let hours = duration.asHours();
-    
-                    console.log('  -- minutes:               ' + minutes);
-                    console.log('  -- hours:                 ' + hours);
-    
-                    results18.minutes = results18.minutes + minutes;
-                    results18.hours = results18.hours + hours;
-                    results18.duration = results18.duration + duration;
-                    results18.count = results18.count + 1;
-  
-  
-                    let measuresArray18 = Session.get('measuresArray');
-                    console.log('measuresArray18', measuresArray18)
-  
-                    measuresArray18[7].numerator = parsedResults.total;
-                    measuresArray18[7].denominator =  "";
-                    measuresArray18[7].score =  (results18.minutes / results18.count).toFixed(0) + ' mins'; // this is just a basic average
-          
-                    Session.set('measuresArray', measuresArray18);
-          
-                  }
-                }), 50);              
-              })  
+        Procedures.find({'code.coding.code': {$in: ivTherapyProcedureCodes }}).forEach(async function(procedure){
+
+          let encounterUrl = fhirBaseUrl + '/'+ get(procedure, 'context.reference') + '?apikey=' + apiKey;
+          await Meteor.call("queryEndpoint", encounterUrl, function(error, result){
+            if(error){
+              console.log('error', error)
             }
-          }
+            if(result){
+              // received some data
+
+              console.log('result', result)
+              let encounter = JSON5.parse(result.content);
+              if(encounter){            
+                console.log('procedure', procedure)
+                console.log('encounter', encounter)
+
+                let encounterStartTime = moment(get(encounter, 'period.start'));
+                let procedureStartTime = moment(get(procedure, 'performedPeriod.start'));
+
+                console.log('  -- encounter start time:  ' + encounterStartTime);
+                console.log('  -- procedure start time:  ' + procedureStartTime);
+
+                let duration = moment.duration(encounterStartTime.diff(procedureStartTime));
+                console.log('  -- duration:              ' + duration);
+
+                let minutes = duration.asMinutes();
+                let hours = duration.asHours();
+
+                console.log('  -- minutes:               ' + minutes);
+                console.log('  -- hours:                 ' + hours);
+
+                results18.minutes = results18.minutes + minutes;
+                results18.hours = results18.hours + hours;
+                results18.duration = results18.duration + duration;
+                results18.count = results18.count + 1;
+
+                // updating measures
+                let measuresArray18 = Session.get('measuresArray');
+        
+                measuresArray18[7].numerator = results18.minutes.toFixed(0);
+                measuresArray18[7].denominator =  results18.count;
+        
+                // we don't want to divide by 0
+                if(results18.count > 0){
+                  measuresArray18[7].score =  (results18.minutes / results18.count).toFixed(0) + ' mins'; // this is just a basic average
+                } else {
+                  measuresArray18[7].score =  '0 mins'; 
+                }
+        
+                console.log('measuresArray18', measuresArray18)
+                Session.set('measuresArray', measuresArray18);
+              }
+            }
+          });
         })
-        
-        
+
         break;
+      case "CM.M21a":
+          console.log('Running algorithm 18')   
+          console.log('Door to IV therapy time for diuretic during early stabilization...')
+  
+  
+          // so let's set up some counters;
+          console.log('Setting up counters...')
+          let results21a = {
+            duration: 0,
+            hours: 0,
+            minutes: 0,
+            count: 0
+          }
+  
+          let medicationRecProcedures = ["428191000124101"]; // Documentation of current medications
+  
+          if(Session.get('usePseudoCodes')){
+            console.log('Using psueduo codes.  To disable; please edit the settings file.')
+            medicationRecProcedures.push("44608003") // BloodTyping
+          }
+
+          console.log('medicationRecProcedures', medicationRecProcedures)
+
+          let medrecCount = 0;
+          let hasMedRec = false;
+          Encounters.find({'reason.coding.code': {$in: encounterReasonCodes }}).forEach(function(encounter){
+            hasMedRec = false;
+
+            Procedures.find({$and: [
+              {'code.coding.code': {$in: medicationRecProcedures }},
+              {'subject.reference': get(encounter, 'subject.reference')}
+            ]}).forEach(function(procedure){
+              hasMedRec = true;
+            });      
+            
+            if(hasMedRec){
+              medrecCount++
+            }
+          })
+
+          let measures21a = Session.get('measuresArray');
+
+          measures21a[8].numerator = medrecCount;
+          measures21a[8].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
+          measures21a[8].score =  ((measures21a[8].numerator /  measures21a[8].denominator) * 100).toFixed(2) + '%';
+
+          Session.set('measuresArray', measures21a);
+
+          break;        
       case "CM.M24":
         console.log('Running algorithm 24');
         
@@ -1202,67 +1188,34 @@ export class AccreditationScorecardPage extends React.Component {
           count: 0
         }
 
-        // procedureCodes = "80146002"; // vasodialator (TBD)
-
-        // if(Session.get('usePseudoCodes')){
-        //   console.log('Using psueduo codes.  To disable; please edit the settings file.')
-        //   // procedureCodes = procedureCodes + ",74016001,168594001,268425006" // Radiology
-        //   procedureCodes = procedureCodes + ",74016001" // Radiology
-        //   // procedureCodes = procedureCodes + ",66348005" // Childbirth
-        // }
-
-        procedureCodes = "12345678"; // Cardiology Consult (TBD)
+        let cardioConsultProcedureCodes = ["12345678"]; // Cardiology Consult (TBD)
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          procedureCodes = procedureCodes + ",51990-0" // Basic Metabolic Panel
+          cardioConsultProcedureCodes.push("51990-0") // Basic Metabolic Panel
         }
 
-        // search the observation patients
-        Encounters.find({'class.code': 'EMERGENCY'}).forEach(function(){
-          console.log('encounter.patient', get(encounter, 'subject.reference'));
+        console.log('cardioConsultProcedureCodes', cardioConsultProcedureCodes)
 
-          let patientIdString = get(encounter, 'subject.reference');
-          let patientId = patientIdString.split("/")[1];
+        Encounters.find({$and: [
+          {'class.code': 'emergency'},
+          {'reason.coding.code': {$in: encounterReasonCodes }}
+        ]}).forEach(function(encounter){
+          console.log('encounter', encounter)
+        });
 
-          DiagnosticReports.find({"id": patientId}).forEach(function(report){
-            console.log('heart failure report: ', report)
-          })
-          // find the Cardiology Consults
-        })
-
-
-        // let cardioConsultUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
-        // console.log('Generating the cardioConsultUrl...', cardioConsultUrl);
-
-        // await Meteor.call("queryEndpoint", cardioConsultUrl, function(error, result){
-        //   if(result){
-        //     let parsedResults = JSON5.parse(result.content);
-        //     console.log('Received ' + parsedResults.total + ' matching procedures.')
-        //     measures[6].numerator = parsedResults.total;
-
-        //     if(parsedResults.entry){
-        //       parsedResults.entry.forEach(async function(procedure){
-
-          
-        //       })  
-        //     }
-
-        //     let measuresArray24 = Session.get('measuresArray');
-        //     console.log('measuresArray24', measuresArray24)
-
-        //     measuresArray24[8].numerator = parsedResults.total;
-        //     measuresArray24[8].denominator =  "";
-        //     measuresArray24[8].score =  (results18.minutes / results18.count).toFixed(0) + ' mins'; // this is just a basic average
-  
-        //     Session.set('measuresArray', measuresArray24);
-        //   }          
-        // })
-
+        let measures24 = Session.get('measuresArray');
+          measures24[9].numerator = 0;
+          measures24[9].denominator = Encounters.find({$and: [
+            {'class.code': 'emergency'},
+            {'reason.coding.code': {$in: encounterReasonCodes }}
+          ]}).count();
+          measures24[9].score =  ((measures24[9].numerator /  measures24[9].denominator) * 100).toFixed(2) + '%';
+        Session.set('measuresArray', measures24);
 
         break;
       case "CM.M27":
         console.log('Running algorithm 27');
-        console.log('Screening completion for CRT/CRT-D during Inpatient level of care stay..')
+        console.log('Screening completion for cardiac resynchronization therapy CRT/CRT-D during Inpatient level of care stay.')
 
         // so let's set up some counters;
         console.log('Setting up counters...')
@@ -1273,80 +1226,183 @@ export class AccreditationScorecardPage extends React.Component {
           count: 0
         }
 
-        procedureCodes = "80146002"; // CRT/CRT-D (TBD)
+        let cardiacResyncProcedureCodes = ["80146002"]; // CRT/CRT-D (TBD)
 
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          procedureCodes = procedureCodes + ",74400008" // Appendicitis
+          cardiacResyncProcedureCodes.push("74400008"); // Appendicitis
         }
 
-        // search the observation patients
-        Encounters.find({'class.code': 'inpatient'}).forEach(function(){
-          console.log('encounter.patient', get(encounter, 'subject.reference'));
+        console.log('cardiacResyncProcedureCodes', cardiacResyncProcedureCodes)
 
-          let patientIdString = get(encounter, 'subject.reference');
-          let patientId = patientIdString.split("/")[1];
+        // // search the observation patients
+        // Encounters.find({'class.code': 'inpatient'}).forEach(function(encounter){
+        //   console.log('encounter.patient', get(encounter, 'subject.reference'));
 
-          Procedures.find({"id": patientId}).forEach(function(report){
-            console.log('heart failure report: ', report)
-          })
-          // find the Cardiology Consults
-        })
+        //   let patientIdString = get(encounter, 'subject.reference');
+        //   // let patientId = patientIdString.split("/")[1];
 
-        // let crtProcedureUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
-        // console.log('Generating the crtProcedureUrl...', crtProcedureUrl);
+        //   // console.log('patientId', patientId)
 
-        // await Meteor.call("queryEndpoint", crtProcedureUrl, function(error, result){
-        //   if(result){
-        //     let parsedResults = JSON5.parse(result.content);
-        //     console.log('Received ' + parsedResults.total + ' matching procedures.')
-        //     measures[6].numerator = parsedResults.total;
+        //   Procedures.find({"subject": patientIdString}).forEach(function(procedure){
+        //     console.log('heart failure procedure: ', procedure);
+        //   })
+        //   // find the Cardiology Consults
+        // })
 
-        //     if(parsedResults.entry){
-        //       parsedResults.entry.forEach(async function(procedure){
-                         
-        //       })  
-        //     }
-        //   }          
-        // })   
+        let cardiacResyncCount = 0;
+        Procedures.find({'code.coding.code': {$in: cardiacResyncProcedureCodes }}).forEach(function(procedure){
+          // console.log('procedure', procedure)
+          cardiacResyncCount++;
+        });
+
+        let measures27 = Session.get('measuresArray');
+
+        measures27[10].numerator = cardiacResyncCount;
+
+        // measures27[10].numerator = encounters_with_heartfailure.inpatient;
+        measures27[10].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
+        measures27[10].score =  ((measures27[10].numerator /  measures27[10].denominator) * 100).toFixed(2) + '%';
+
+        Session.set('measuresArray', measures27);
 
         break;
-      case "CM.M28c":
-        console.log('Running algorithm 28');
-        console.log('Documented daily weight complete....')
+      case "CM.M28a":
+        console.log('Running algorithm 28a');
+        console.log('Documented physical exam complete....')
 
         // so let's set up some counters;
         console.log('Setting up counters...')
-        let results28 = {
+        let results28a = {
           duration: 0,
           hours: 0,
           minutes: 0,
           count: 0
         }
 
-        procedureCodes = "80146002"; // vasodialator (TBD)
+        let physicalExamProcedureCodes = ["5880005"]; // Physical Exam
 
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          procedureCodes = procedureCodes + ",74016001" // Radiology
+          physicalExamProcedureCodes.push("74016001") // Knee X-Ray
+        }
+  
+        console.log('physicalExamProcedureCodes', physicalExamProcedureCodes);
+
+        lengthOfStay = 1;
+        totalObservations = 0;
+        let patientsWithDailyExam = 0;
+
+        Encounters.find({$and: [
+          {'class.code': 'emergency'},
+          {'reason.coding.code': {$in: encounterReasonCodes }}
+        ]}).forEach(function(encounter){
+          console.log('encounter', encounter)
+
+          Procedures.find({'context.reference': 'Encounter/' + get(encounter, 'id')}).forEach(function(procedure){
+            console.log('procedure', procedure)
+            console.log('encounter (count my days)', encounter);  // https://momentjs.com/docs/#/displaying/difference/
+          })
+        });
+
+          
+        let measures28a = Session.get('measuresArray');
+          measures28a[11].numerator = patientsWithDailyExam;
+          measures28a[11].denominator = Encounters.find({$and: [
+            {'class.code': 'inpatient'},
+            {'reason.coding.code': {$in: encounterReasonCodes }}
+          ]}).count();
+          measures28a[11].score =  ((measures28a[11].numerator /  measures28a[11].denominator) * 100).toFixed(2) + '%';
+        Session.set('measuresArray', measures28a);
+        break;
+      case "CM.M28b":
+        console.log('Running algorithm 28b');
+        console.log('Documented daily assessment of intake/outtake (I/O).....')
+
+        // so let's set up some counters;
+        console.log('Setting up counters...')
+        let results28b = {
+          duration: 0,
+          hours: 0,
+          minutes: 0,
+          count: 0
         }
 
-        let dailyWeightUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
-        console.log('Generating the dailyWeightUrl...', dailyWeightUrl);
+        let ioProcedureCodes = ["12345678"]; // intake/outtake (TBD)
 
-        await Meteor.call("queryEndpoint", dailyWeightUrl, function(error, result){
-          if(result){
-            let parsedResults = JSON5.parse(result.content);
-            console.log('Received ' + parsedResults.total + ' matching procedures.')
-            measures[6].numerator = parsedResults.total;
+        if(Session.get('usePseudoCodes')){
+          console.log('Using psueduo codes.  To disable; please edit the settings file.')
+          ioProcedureCodes.push("76601001") // Radiology
+        }
 
-            if(parsedResults.entry){
-              parsedResults.entry.forEach(async function(procedure){
-                         
-              })  
-            }
-          }          
-        })        
+        lengthOfStay = 1;
+        totalObservations = 0;
+        let patientsWithDailyIo = 0;
+
+        Procedures.find({'code.coding.code': {$in: ioProcedureCodes }}).forEach(function(observation){
+          console.log('observation', observation);
+        })
+        
+        let measures28b = Session.get('measuresArray');
+          measures28b[12].numerator = patientsWithDailyIo;
+          measures28b[12].denominator = Encounters.find({$and: [
+            {'class.code': 'inpatient'},
+            {'reason.coding.code': {$in: encounterReasonCodes }}
+          ]}).count();
+          measures28b[12].score =  ((measures28b[12].numerator /  measures28b[12].denominator) * 100).toFixed(2) + '%';
+        Session.set('measuresArray', measures28b);
+        break;
+      case "CM.M28c":
+        console.log('Running algorithm 28c');
+        console.log('Documented daily weight complete....')
+
+        // so let's set up some counters;
+        console.log('Setting up counters...')
+        let results28c = {
+          duration: 0,
+          hours: 0,
+          minutes: 0,
+          count: 0
+        }
+
+        let weightProcedureCodes = ["29463-7"]; // vasodialator (TBD)
+
+        if(Session.get('usePseudoCodes')){
+          console.log('Using psueduo codes.  To disable; please edit the settings file.')
+          weightProcedureCodes.push("39156-5") // Radiology
+        }
+
+        console.log('weightProcedureCodes', weightProcedureCodes)
+
+        lengthOfStay = 1;
+        totalObservations = 0;
+        let patientsWithDailyWeights = 0;
+
+        Encounters.find({$and: [
+          {'class.code': 'inpatient'},
+          {'reason.coding.code': {$in: encounterReasonCodes }}
+        ]}).forEach(function(encounter){
+          console.log('encounter', encounter)
+
+          Observations.find({'context.reference': 'Encounter/' + get(encounter, 'id')}).forEach(function(observation){
+            console.log('observation', observation)
+          })
+        })
+
+        // Observations.find({'code.coding.code': {$in: weightProcedureCodes }}).forEach(function(observation){
+        //   console.log('observation', observation);
+        //   console.log('encounter', encounter);
+        // })
+
+        let measures28c = Session.get('measuresArray');
+          measures28c[13].numerator = patientsWithDailyWeights;
+          measures28c[13].denominator = Encounters.find({$and: [
+            {'class.code': 'inpatient'},
+            {'reason.coding.code': {$in: encounterReasonCodes }}
+          ]}).count()
+          measures28c[13].score =  ((measures28c[13].numerator /  measures28c[13].denominator) * 100).toFixed(2) + '%';
+        Session.set('measuresArray', measures28c);
+            
         break;
       case "CM.M29":
         console.log('Running algorithm 29');
@@ -1361,39 +1417,28 @@ export class AccreditationScorecardPage extends React.Component {
           count: 0
         }
 
-
-        procedureCodes = "12345678"; // Cardiology Consult (TBD)
+        let cardioConsultInpatientCodes = ["12345678"]; // Cardiology Consult (TBD)
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          procedureCodes = procedureCodes + ",51990-0" // Basic Metabolic Panel
+          cardioConsultInpatientCodes.push("180325003") // Basic Metabolic Panel
         }
 
+        console.log('cardioConsultInpatientCodes', cardioConsultInpatientCodes)
 
-        let cardiologyConsultUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
-        console.log('Generating the cardiologyConsultUrl...', cardiologyConsultUrl);
+        let cardioConsultCount = 0;
+        Procedures.find({'code.coding.code': {$in: cardioConsultInpatientCodes }}).forEach(function(procedure){
+          console.log('procedure', procedure)
+          cardioConsultCount++
+        });
 
-        await Meteor.call("queryEndpoint", cardiologyConsultUrl, function(error, result){
-          if(result){
-            let parsedResults = JSON5.parse(result.content);
-            console.log('Received ' + parsedResults.total + ' matching procedures.')
-            measures[6].numerator = parsedResults.total;
+        console.log('cardioConsultCount', cardioConsultCount)
 
-            if(parsedResults.entry){
-              parsedResults.entry.forEach(async function(procedure){
-                         
-              })  
-            }
+        let measures29 = Session.get('measuresArray');
+          measures29[14].numerator = cardioConsultCount;
+          measures29[14].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
+          measures29[14].score =  ((measures29[14].numerator /  measures29[14].denominator) * 100).toFixed(2) + '%';
+        Session.set('measuresArray', measures29);
 
-            // let measuresArray18 = Session.get('measuresArray');
-            // console.log('measuresArray18', measuresArray18)
-
-            // measuresArray18[7].numerator = parsedResults.total;
-            // measuresArray18[7].denominator =  "";
-            // measuresArray18[7].score =  (results18.minutes / results18.count).toFixed(0) + ' mins'; // this is just a basic average
-  
-            // Session.set('measuresArray', measuresArray18);
-          }          
-        })           
         break;
       case "CM.M31":
         console.log('Running algorithm 31')           
@@ -1408,35 +1453,34 @@ export class AccreditationScorecardPage extends React.Component {
           count: 0
         }
 
-        procedureCodes = "80146002"; // vasodialator (TBD)
+        let renalProcedureCodes = ["12345678"]; // renal function (TBD)
 
         if(Session.get('usePseudoCodes')){
           console.log('Using psueduo codes.  To disable; please edit the settings file.')
-          procedureCodes = procedureCodes + ",74016001" // Radiology
+          renalProcedureCodes.push("777-3") // Platelets
         }
 
-        let renalAssessmentUrl = self.data.endpoint +  "/Procedure?code=" + procedureCodes + "&" + dateQuery + "&_count=1000&apikey=" + self.data.apiKey;
-        console.log('Generating the renalAssessmentUrl...', renalAssessmentUrl);
+        console.log('renalProcedureCodes', renalProcedureCodes)
 
-        await Meteor.call("queryEndpoint", renalAssessmentUrl, function(error, result){
-          if(result){
-            let parsedResults = JSON5.parse(result.content);
-            console.log('Received ' + parsedResults.total + ' matching procedures.')
-            measures[6].numerator = parsedResults.total;
+        let renalCount = 0;
+        Observations.find({'code.coding.code': {$in: renalProcedureCodes }}).forEach(function(procedure){
+          console.log('procedure', procedure)
+          renalCount++;
+        });
 
-            if(parsedResults.entry){
-              parsedResults.entry.forEach(async function(procedure){
-                         
-              })  
-            }
-          }          
-        })
+        console.log('renalCount', renalCount);
+
+        let measures31 = Session.get('measuresArray');
+          measures31[15].numerator = renalCount;
+          measures31[15].denominator = get(this, 'data.totals.encounters.discharged_with_heartfailure')
+          measures31[15].score =  ((measures31[15].numerator /  measures31[15].denominator) * 100).toFixed(2) + '%';
+        Session.set('measuresArray', measures31);
+        
         break;                                        
       default:
         break;
     }
 
-    Session.set('measuresArray', measures);
   }
   relayAction(identifier, foo, bar){
     console.log('runAction', identifier)
