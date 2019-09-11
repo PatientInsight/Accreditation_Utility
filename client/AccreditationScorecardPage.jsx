@@ -98,13 +98,13 @@ Session.setDefault('usePseudoCodes', get(Meteor, 'settings.public.usePseudoCodes
 
 Session.setDefault('activeMeasure', {});
 Session.setDefault('showJson', false);
-Session.setDefault('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=112790001&apikey=');
+Session.setDefault('fhirQueryUrl', '/Patient?_has:Procedure:subject:code=112790001');
 
 Session.setDefault('encounter_observational', 0);
 Session.setDefault('encounter_inpatient', 0);
 Session.setDefault('encounter_inpatient_accute', 0);
 Session.setDefault('encounter_ambulatory', 0);
-Session.setDefault('encounter_emergency', 0);
+Session.setDefault('encounter_emergency', 0); 
 Session.setDefault('encounter_field', 0);
 Session.setDefault('encounter_homehealth', 0);
 Session.setDefault('encounter_preadmission', 0);
@@ -294,10 +294,23 @@ export class AccreditationScorecardPage extends React.Component {
     // })
 
   }
+  isFhirServerThatRequiresApiKey(){
+    if(["https://syntheticmass.mitre.org/v1/fhir"].includes(get(Meteor, 'settings.public.interfaces.default.channel.endpoint'))){
+      return true;
+    } else {
+      return false
+    }
+  }
   async queryEndpoint(scope, modality){
-    console.log('queryEndpoint', scope.data.endpoint + scope.data.fhirQueryUrl + scope.data.apiKey)
 
-    await Meteor.call("queryEndpoint", scope.data.endpoint + scope.data.fhirQueryUrl + scope.data.apiKey, function(error, result){
+    let localizedFhirQueryUrl = scope.data.fhirQueryUrl;
+    if(this.isFhirServerThatRequiresApiKey()){
+      localizedFhirQueryUrl = localizedFhirQueryUrl + '&apikey=' + scope.data.apiKey;
+    }
+    console.log('localizedFhirQueryUrl', localizedFhirQueryUrl)
+    console.log('queryEndpoint', scope.data.endpoint + localizedFhirQueryUrl )
+
+    await Meteor.call("queryEndpoint", scope.data.endpoint + localizedFhirQueryUrl, function(error, result){
       if(error){
         console.log('error', error)
       }
@@ -308,7 +321,6 @@ export class AccreditationScorecardPage extends React.Component {
           return value;
         });
         console.log('parsedResults', parsedResults);
-
 
         Session.set('displayText', parsedResults);
   
@@ -364,41 +376,9 @@ export class AccreditationScorecardPage extends React.Component {
     })
 
   }
-  // queryEndoscopy(){
-  //   console.log('queryEndoscopy')
-
-  //   let dateQuery = this.generateDateQuery('_has:Procedure');   
-
-  //   Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=112790001&' + dateQuery + '&apikey=');
-  //   this.queryEndpoint(this, 'endoscopy');
-  // }
-  // queryEchocardiograms(){
-  //   console.log('queryEchocardiograms')
-
-  //   let dateQuery = this.generateDateQuery('_has:Procedure');   
-    
-  //   Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=40701008&apikey=');
-  //   this.queryEndpoint(this, 'echo');
-  // }
-  // queryAngiography(){
-  //   console.log('queryAngiography')
-    
-  //   let dateQuery = this.generateDateQuery('_has:Procedure');   
-    
-  //   Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=33367005&apikey=');
-  //   this.queryEndpoint(this, 'angio');
-  // }
-  // queryCardiacMris(){
-  //   console.log('queryCardiacMris')
-    
-  //   let dateQuery = this.generateDateQuery('_has:Procedure');   
-    
-  //   Session.set('fhirQueryUrl', '/Patient?_count=1000&_has:Procedure:subject:code=241620005&apikey=');
-  //   this.queryEndpoint(this, 'mri');
-  // }
   queryPatients(){
     console.log('queryPatients')
-    Session.set('fhirQueryUrl', '/Patient?apikey=');
+    Session.set('fhirQueryUrl', '/Patient');
     this.queryEndpoint(this, 'patient');
     this.queryEndpoint(this, 'patient');
   }
@@ -417,15 +397,20 @@ export class AccreditationScorecardPage extends React.Component {
 
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
-      reasonCodes = reasonCodes + ",74400008" // Appendicitis
+      reasonCodes = reasonCodes + ",74400008,72892002" // Appendicitis, Normal Pregnancy
+    }
+
+    let apiKeySuffix = '';
+    if(this.isFhirServerThatRequiresApiKey()){
+      apiKeySuffix = '&apikey=' + this.data.apiKey;
     }
 
     if(Session.equals('fhirVersion') === "R4"){
       // R4
-      heartfailureEncounterUrl = this.data.endpoint + '/Encounter?reason-code=' + reasonCodes + '&' + dateQuery + '_count=1000&apikey=' + this.data.apiKey;
+      heartfailureEncounterUrl = this.data.endpoint + '/Encounter?reason-code=' + reasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;
     } else {
       // STU3
-      heartfailureEncounterUrl = this.data.endpoint + '/Encounter?reason=' + reasonCodes + '&' + dateQuery + '_count=1000&apikey=' + this.data.apiKey;
+      heartfailureEncounterUrl = this.data.endpoint + '/Encounter?reason=' + reasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;
     }
 
 
@@ -478,12 +463,24 @@ export class AccreditationScorecardPage extends React.Component {
 
     let heartfailureUrl = "";
 
+    let apiKeySuffix = '';
+    if(this.isFhirServerThatRequiresApiKey()){
+      apiKeySuffix = '&apikey=' + this.data.apiKey;
+    }
+
+    let reasonCodes = "84114007,161505003";  // Heart failure
+
+    if(Session.get('usePseudoCodes')){
+      console.log('Using psueduo codes.  To disable; please edit the settings file.')
+      reasonCodes = reasonCodes + ",74400008,72892002" // Appendicitis, Normal Pregnancy
+    }
+
     if(Session.equals('fhirVersion') === "R4"){
       // R4
-      heartfailureUrl = this.data.endpoint + '/Patient?_has:Encounter:reason-code=84114007,161505003&' + dateQuery + '_count=1000&apikey=' + this.data.apiKey;      
+      heartfailureUrl = this.data.endpoint + '/Patient?_has:Encounter:reason-code=' + reasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;      
     } else {
       // STU3
-      heartfailureUrl = this.data.endpoint + '/Patient?_has:Encounter:reason=84114007,161505003&' + dateQuery + '_count=1000&apikey=' + this.data.apiKey;      
+      heartfailureUrl = this.data.endpoint + '/Patient?_has:Encounter:reason=' + reasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;      
     }
 
     console.log('heartfailureUrl', heartfailureUrl);
@@ -500,21 +497,26 @@ export class AccreditationScorecardPage extends React.Component {
     console.log('start_date', Session.get('start_date'));
     console.log('end_date', Session.get('end_date'));
 
+    let apiKeySuffix = '';
+    if(this.isFhirServerThatRequiresApiKey()){
+      apiKeySuffix = '&apikey=' + this.data.apiKey;
+    }
+
     // https://www.hl7.org/fhir/v3/ActEncounterCode/vs.html
 
-    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=IMP&_count=1000&apikey=' + this.data.apiKey, function(error, result){
+    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=IMP&_count=1000' + apiKeySuffix, function(error, result){
       let parsedResults = JSON5.parse(result.content);
       console.log('Inpatients:  ', parsedResults)
       Session.set('encounter_observational', parsedResults.total);
     })
 
-    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=AMB&_count=1000&apikey=' + this.data.apiKey, function(error, result){
+    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=AMB&_count=1000' + apiKeySuffix, function(error, result){
       let parsedResults = JSON5.parse(result.content);
       console.log('Ambulatory:  ', parsedResults)
       Session.set('encounter_inpatient', parsedResults.total);
     })
 
-    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=OBSENC&_count=1000&apikey=' + this.data.apiKey, function(error, result){
+    await Meteor.call("queryEndpoint", this.data.endpoint + '/Patient?_has:Encounter:class=OBSENC&_count=1000' + apiKeySuffix, function(error, result){
       let parsedResults = JSON5.parse(result.content);
       console.log('Observations:  ', parsedResults)
       Session.set('encounter_ambulatory', parsedResults.total);
@@ -554,7 +556,13 @@ export class AccreditationScorecardPage extends React.Component {
 
     // generate the url to fetch the encounters for a particular date range
     let dateQuery = this.generateDateQuery();    
-    let encounterUrl = this.data.endpoint + '/Encounter?' + dateQuery + '&_count=1000&apikey=' + this.data.apiKey;
+
+    let apiKeySuffix = '';
+    if(this.isFhirServerThatRequiresApiKey()){
+      apiKeySuffix = '&apikey=' + this.data.apiKey;
+    }
+
+    let encounterUrl = this.data.endpoint + '/Encounter?' + dateQuery + '&_count=1000' + apiKeySuffix;
 
     this.recursiveEncounterQuery(encounterUrl);
   }
@@ -712,6 +720,7 @@ export class AccreditationScorecardPage extends React.Component {
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
       encounterReasonCodes.push("74400008"); // Appendicitis
+      encounterReasonCodes.push("72892002"); // Normal Pregnancy
     }
 
     Encounters.find({'reason.coding.code': {$in: encounterReasonCodes }}).forEach(function(encounter){
@@ -745,6 +754,7 @@ export class AccreditationScorecardPage extends React.Component {
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
       encounterReasonCodes.push("74400008"); // Appendicitis
+      encounterReasonCodes.push("72892002"); // Normal Pregnancy
     }
 
     console.log('Searching for reason code ' + encounterReasonCodes)
@@ -1546,7 +1556,7 @@ export class AccreditationScorecardPage extends React.Component {
           <GlassCard height='auto'>
             <CardTitle 
               title="Cardiac Accreditation Scorecard" 
-              subtitle={ this.data.endpoint + this.data.fhirQueryUrl + this.data.apiKey }
+              subtitle={ this.data.endpoint + this.data.fhirQueryUrl + '&apikey=' + this.data.apiKey }
               style={{fontSize: '100%'}} />
             <CardText style={{fontSize: '100%'}}>
 

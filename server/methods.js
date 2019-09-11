@@ -13,22 +13,21 @@ Meteor.methods({
             'Access-Control-Allow-Origin': '*'          
           }});
     },
-    async metadataAutoscan(oauthBaseUrl){
-        check(oauthBaseUrl, String)
-        console.log('metadataAutoscan')
-        var self = this;
+    // async metadataAutoscan(oauthBaseUrl){
+    //     check(oauthBaseUrl, String)
+    //     console.log('metadataAutoscan')
+    //     var self = this;
   
-        var metadataRoute = oauthBaseUrl + '/metadata' + formatSuffix;
-        console.log('metadata route', metadataRoute)
-
+    //     var metadataRoute = oauthBaseUrl + '/metadata' + formatSuffix;
+    //     console.log('metadata route', metadataRoute)
   
-        const conformance = await HTTP.get(metadataRoute, { headers: {
-            'Accept': ['application/json', 'application/json+fhir'],
-            'Access-Control-Allow-Origin': '*'          
-        }});
+    //     const conformance = await HTTP.get(metadataRoute, { headers: {
+    //         'Accept': ['application/json', 'application/json+fhir'],
+    //         'Access-Control-Allow-Origin': '*'          
+    //     }});
 
-        return conformance;
-    },
+    //     return conformance;
+    // },
     createNewNote: function(text){
         check(text, String);        
         console.log('createNewNote()', text);

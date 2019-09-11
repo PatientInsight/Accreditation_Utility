@@ -13,19 +13,29 @@ let apiKey = get(Meteor, 'settings.public.interfaces.default.auth.username', '')
 let usePseudoCodes = get(Meteor, 'settings.public.usePseudoCodes', false);
 let fhirBaseUrl = get(Meteor, 'settings.public.interfaces.default.channel.endpoint', false);
 
+isFhirServerThatRequiresApiKey = function(){
+  if(["https://syntheticmass.mitre.org/v1/fhir"].includes(get(Meteor, 'settings.public.interfaces.default.channel.endpoint'))){
+    return true;
+  } else {
+    return false
+  }
+}
+
+
 Session.setDefault('filterEncountersForHeartFailures', false);
 export class ScorecardButtons extends React.Component {
   constructor(props) {
     super(props);
   }
   fetchPatients(){
-    console.log('Fetching Procedures')
+    console.log('Fetching Patients')
 
     let reasonCodes = ["84114007","161505003"];  // Heart failure
 
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
       reasonCodes.push("74400008") // Appendicitis
+      reasonCodes.push("72892002"); // Normal Pregnancy
     }
 
     // generate the url to fetch the encounters for a particular date range
@@ -35,7 +45,11 @@ export class ScorecardButtons extends React.Component {
     }).forEach(function(encounter){
       if(get(encounter, 'id')){
         // let encounterUrl = fhirBaseUrl + '/Procedure?encounter=Encounter/' + get(encounter, 'id') + '&_count=1000&apikey=' + apiKey;
-        let encounterUrl = fhirBaseUrl + '/'+ get(encounter, 'subject.reference') + '?apikey=' + apiKey;
+        let encounterUrl = fhirBaseUrl + '/'+ get(encounter, 'subject.reference');
+        
+        if(isFhirServerThatRequiresApiKey()){
+          encounterUrl = encounterUrl + '?apikey=' + apiKey;
+        }
         Meteor.setTimeout(function(){
           AutoFetcher.recursivePatientQuery(encounterUrl, apiKey)
         }, 100);
@@ -57,7 +71,11 @@ export class ScorecardButtons extends React.Component {
     Patients.find().forEach(function(patient){
       if(get(patient, 'id')){
         // let procedureUrl = fhirBaseUrl + '/Procedure?patient=Encounter/' + get(patient, 'id') + '&_count=1000&apikey=' + apiKey;
-        let procedureUrl = fhirBaseUrl + '/Procedure?patient=' + get(patient, 'id') + '&_count=1000&apikey=' + apiKey;
+        let procedureUrl = fhirBaseUrl + '/Procedure?patient=' + get(patient, 'id') + '&_count=1000';
+
+        if(isFhirServerThatRequiresApiKey()){
+          procedureUrl = procedureUrl + '?apikey=' + apiKey;
+        }
         Meteor.setTimeout(function(){
           AutoFetcher.recursiveProceduresQuery(procedureUrl, apiKey)
         }, 50);
@@ -76,7 +94,11 @@ export class ScorecardButtons extends React.Component {
     let dateQuery = AutoFetcher.generateDateQuery();    
     Patients.find().forEach(function(patient){
       if(get(patient, 'id')){
-        let observationsUrl = fhirBaseUrl + '/Observation?patient=' + get(patient, 'id') + '&_count=1000&apikey=' + apiKey;
+        let observationsUrl = fhirBaseUrl + '/Observation?patient=' + get(patient, 'id') + '&_count=1000';
+
+        if(isFhirServerThatRequiresApiKey()){
+          observationsUrl = observationsUrl + '?apikey=' + apiKey;
+        }
         Meteor.setTimeout(function(){
           AutoFetcher.recursiveObservationsQuery(observationsUrl, apiKey);
         }, 50);
@@ -96,7 +118,12 @@ export class ScorecardButtons extends React.Component {
     let dateQuery = AutoFetcher.generateDateQuery();    
     Patients.find().forEach(function(patient){
       if(get(patient, 'id')){
-        let diagnosticReportUrl = fhirBaseUrl + '/DiagnosticReport?patient=' + get(patient, 'id') + '&_count=1000&apikey=' + apiKey;
+        let diagnosticReportUrl = fhirBaseUrl + '/DiagnosticReport?patient=' + get(patient, 'id') + '&_count=1000';
+
+        if(isFhirServerThatRequiresApiKey()){
+          diagnosticReportUrl = diagnosticReportUrl + '?apikey=' + apiKey;
+        }
+
         Meteor.setTimeout(function(){
           AutoFetcher.recursiveDiagnosticReportsQuery(diagnosticReportUrl, apiKey);
         }, 50);
@@ -119,13 +146,17 @@ export class ScorecardButtons extends React.Component {
     // generate the url to fetch the encounters for a particular date range
     Patients.find().forEach(function(patient){
       if(get(patient, 'id')){
-        let documentReferenceUrl = fhirBaseUrl + '/DocumentReference?subject=Patient/' + get(patient, 'id') + '&_count=1000&apikey=' + apiKey;
+        let documentReferenceUrl = fhirBaseUrl + '/DocumentReference?subject=Patient/' + get(patient, 'id') + '&_count=1000';
+
+        if(isFhirServerThatRequiresApiKey()){
+          documentReferenceUrl = documentReferenceUrl + '?apikey=' + apiKey;
+        }
+
         Meteor.setTimeout(function(){
           AutoFetcher.recursiveDocumentReferenceQuery(documentReferenceUrl, apiKey);
         }, 50);
       }
     })
-
 
     AutoFetcher.recursiveDocumentReferenceQuery(encounterUrl, apiKey);
 
