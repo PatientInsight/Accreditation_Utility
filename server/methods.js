@@ -1,41 +1,33 @@
+
 import { HTTP } from 'meteor/http';
+import { get } from 'lodash';
+import { Match } from 'meteor/check';
 
 Meteor.methods({
-    async queryEndpoint(fhirUrl){
+    async queryEndpoint(fhirUrl, accessToken){
         check(fhirUrl, String)
-        console.log('queryEndpoint', fhirUrl)
+        check(accessToken, Match.Maybe(String));
+
+        console.log('Query Endpoint: ', fhirUrl)
+        console.log('AccessToken:    ', accessToken)
+
         var self = this;
   
         var queryResult;
-  
-        return await HTTP.get(fhirUrl, { headers: {
-            'Accept': ['application/json', 'application/json+fhir'],
+        var httpHeaders = { headers: {
+            'Accept': ['application/json', 'application/fhir+json'],
             'Access-Control-Allow-Origin': '*'          
-          }});
-    },
-    // async metadataAutoscan(oauthBaseUrl){
-    //     check(oauthBaseUrl, String)
-    //     console.log('metadataAutoscan')
-    //     var self = this;
-  
-    //     var metadataRoute = oauthBaseUrl + '/metadata' + formatSuffix;
-    //     console.log('metadata route', metadataRoute)
-  
-    //     const conformance = await HTTP.get(metadataRoute, { headers: {
-    //         'Accept': ['application/json', 'application/json+fhir'],
-    //         'Access-Control-Allow-Origin': '*'          
-    //     }});
+        }}
 
-    //     return conformance;
-    // },
-    createNewNote: function(text){
-        check(text, String);        
-        console.log('createNewNote()', text);
+        if(accessToken){
+            httpHeaders.headers["Authorization"] = 'Bearer ' + accessToken;
+        }
 
-        Notes.insert({
-            resourceType: 'Note',
-            note: text
-        });
+        console.log('httpHeaders', httpHeaders)
+
+        return await HTTP.get(fhirUrl, httpHeaders);
     }
 });
+
+
 

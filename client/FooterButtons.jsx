@@ -74,7 +74,7 @@ export class ScorecardButtons extends React.Component {
         let procedureUrl = fhirBaseUrl + '/Procedure?patient=' + get(patient, 'id') + '&_count=1000';
 
         if(isFhirServerThatRequiresApiKey()){
-          procedureUrl = procedureUrl + '?apikey=' + apiKey;
+          procedureUrl = procedureUrl + '&apikey=' + apiKey;
         }
         Meteor.setTimeout(function(){
           AutoFetcher.recursiveProceduresQuery(procedureUrl, apiKey)
@@ -97,7 +97,7 @@ export class ScorecardButtons extends React.Component {
         let observationsUrl = fhirBaseUrl + '/Observation?patient=' + get(patient, 'id') + '&_count=1000';
 
         if(isFhirServerThatRequiresApiKey()){
-          observationsUrl = observationsUrl + '?apikey=' + apiKey;
+          observationsUrl = observationsUrl + '&apikey=' + apiKey;
         }
         Meteor.setTimeout(function(){
           AutoFetcher.recursiveObservationsQuery(observationsUrl, apiKey);
@@ -121,7 +121,7 @@ export class ScorecardButtons extends React.Component {
         let diagnosticReportUrl = fhirBaseUrl + '/DiagnosticReport?patient=' + get(patient, 'id') + '&_count=1000';
 
         if(isFhirServerThatRequiresApiKey()){
-          diagnosticReportUrl = diagnosticReportUrl + '?apikey=' + apiKey;
+          diagnosticReportUrl = diagnosticReportUrl + '&apikey=' + apiKey;
         }
 
         Meteor.setTimeout(function(){
@@ -149,7 +149,7 @@ export class ScorecardButtons extends React.Component {
         let documentReferenceUrl = fhirBaseUrl + '/DocumentReference?subject=Patient/' + get(patient, 'id') + '&_count=1000';
 
         if(isFhirServerThatRequiresApiKey()){
-          documentReferenceUrl = documentReferenceUrl + '?apikey=' + apiKey;
+          documentReferenceUrl = documentReferenceUrl + '&apikey=' + apiKey;
         }
 
         Meteor.setTimeout(function(){
