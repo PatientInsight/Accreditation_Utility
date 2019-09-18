@@ -6,29 +6,28 @@ This is an example plugin for Meteor on FHIR (and Symptomatic) that illustrates 
 #### Clone the Example Plugin      
 
 ```bash
-cd webapp/packages
-git clone https://github.com/symptomatic/accreditation-utility  
+# download GPL base build
+git clone https://github.com/meteor-on-fhir 
+cd meteor-on-fhir/webapp/packages
+
+# download MIT packages
+git clone https://github.com/clinical-meteor/hl7-resource-encounter 
+git clone https://github.com/clinical-meteor/hl7-resource-patient
+git clone https://github.com/clinical-meteor/hl7-resource-procedure
+git clone https://github.com/clinical-meteor/hl7-resource-observation
+git clone https://github.com/clinical-meteor/hl7-resource-document-reference
+git clone https://github.com/clinical-meteor/hl7-resource-diagnostic-report
+git clone https://github.com/clinical-meteor/hl7-resource-organization
+
+# download licensed Symptomatic packages (do not release)
+git clone https://github.com/symptomatic/theming
+git clone https://github.com/symptomatic/smart-on-fhir-client
+git clone https://github.com/symptomatic/continuity-of-care
+git clone https://github.com/symptomatic/hl7-clinical-document-architecture
+
+# download proprietary plugin
+git clone https://github.com/patientinsight/accreditation-utility  
 ```
-
-#### Customize the Plugin      
-
-```bash
-# Step 1 - Rename package folder
-packages/accreditation-utility
-
-# Step 2 - Update package name, description
-packages/accreditation-utility/package.js
-
-# Step 3 - Customize the HelloWorld Page
-packages/accreditation-utility/client/HelloWorldPage.jsx
-
-# Step 4 - Update your routes if you wish
-packages/accreditation-utility/index.jsx
-
-# Step 5 - Edit the settings file; add custom route, etc.
-packages/accreditation-utility/configs/settings.example.jsx
-```
-
 
 #### Run Meteor on FHIR with your plugin  
 
@@ -41,14 +40,64 @@ meteor npm install
 meteor --settings packages/accreditation-utility/configs/settings.example.json
 ```
 
-#### Example: Body Mass Index - Data Pipeline  
+#### Compile to desktop app
 
-The BodyMassIndex calculator relies on [SMART on FHIR](http://docs.smarthealthit.org/) to fetch [FHIR Patient](https://www.hl7.org/fhir/patient.html) and [FHIR Observation](https://www.hl7.org/fhir/observation.html) resources.  We then create a [FHIR RiskAssessment](https://www.hl7.org/fhir/riskassessment.html) for obesity.  When fetching from an upstream FHIR Server, the overall data architecture and sequence diagram looks like the following.
+```bash
+# add licensed packages
+meteor add symptomatic:theming symtomatic:smart-on-fhir-client symptomatic:continuity-of-care clincial:hl7-clinical-document-architecture
 
-![BodyMassIndex Data Pipeline](https://raw.githubusercontent.com/symptomatic/accreditation-utility/master/assets/Body%20Mass%20Index%20Calculator%20Plugin%20-%20New%20Page.png)  
+# add your proprietary packages
+meteor add patientinsight:accreditation-utility
 
+# install dependences
+meteor npm install
 
-#### Bypassing CORS
+# run with a custom settings file
+meteor --settings packages/accreditation-utility/configs/settings.example.json
 ```
-open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --user-data-dir="/tmp/chrome_dev_test" --disable-web-security
+
+
+
+#### Generating a synthetic dataset
+
+```bash
+# download synthea
+# this version of synthea is configured with cardiac data
+# and exports DSTU2 files
+git clone https://github.com/synthetichealth/synthea.git
+cd synthea
+
+# build the utility
+./gradlew build check test
+
+# edit the congestive_heart_failure module as needed
+nano modules/congestive_heart_failure.json
+
+# rebuild the utility with the updated modules
+./gradlew build check test
+
+# run synthea and create a few thousand test patients
+./run_synthea -s 12345 -m heart* -p 1000 California "Los Angeles"
 ```
+
+
+#### Set up a test server
+
+```bash
+# install the hapi server (requires java)
+brew install hapi-fhir-cli
+
+# run the hapi server using DSTU2 
+# most EHRs from 2015 include this supprot
+hapi-fhir-cli run-server -v dstu2
+
+# load the output directory into the HAPI server
+node index.js -d ../synthea/output/fhir_dstu2/ -t 'hello hapi' -w -S http://localhost:8080/baseDstu2/
+
+# confirm that data is loaded correctly
+curl http://localhost:8080/baseDstu2/Patient?_count=100
+curl http://localhost:8080/baseDstu2/Encounter?_count=100
+```
+
+
+

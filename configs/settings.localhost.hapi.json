@@ -1,0 +1,200 @@
+{
+  "public": {
+    "title": "PatientInsight - Accreditation Utility (Localhost)",
+    "usePseudoCodes": true,
+    "apiKey": "",
+    "theme": {
+      "showVideoBackground": false,
+      "darkroomTextEnabled": false,
+      "backgroundImagePath": "/packages/symptomatic_theming/backgrounds/Gradient-Desaturated.png",
+      "glassColor": "rgba(255, 255, 255, 1)",
+      "boxShadows": "none"
+    },
+    "home": {
+      "showUnderConstruction": false,
+      "showExperimental": false,
+      "showApps": true,      
+      "showFhirMenu": true,
+      "showRegistration": true
+    },
+    "defaults": {
+      "avatars": true,
+      "barcodes": true,
+      "hexgridMenu": false,
+      "nfcOrbital": false,
+      "notificationMenu": false,
+      "searchbarVisible": true,
+      "displayNavbars": true,
+      "disableHeader": false,
+      "disableFooter": false,
+      "darkroom": false,
+      "iFrameEnabled": false,
+      "iFrameUrl": "https://www.wikipedia.org/",
+      "paginationLimit": 100,
+      "subscriptionLimit": 1000,
+      "cards": {
+        "height": "auto",
+        "opacity": 0.95
+      },
+      "registration": {
+        "displayAccessCode": true,
+        "signInWith": false
+      },
+      "routes": {
+        "homePage": "/",
+        "landingPage": "/scorecard",
+        "adminWelcomePage": "/scorecard",
+        "adminHomePage": "/scorecard",
+        "adminDashboard": "/scorecard"
+      },
+      "header":{
+        "menuIcon": ""
+      },
+      "sidebar": {
+        "menuItems": {
+          "Index": false,
+          "Healthlog": false,
+          "GettingStarted": false,
+          "DataManagement": true,
+          "FhirResources": true,
+          "Theming": false,
+          "DynamicModules": true
+        },
+        "hidden": [
+          "/allergies",
+          "/audit-events",
+          "/biometrics-dashboard",
+          "/body-mass-index",
+          "/communications",
+          "/bundles",
+          "/careplan",
+          "/careplans",
+          "/care-plans",
+          "/consents",
+          "/contracts",
+          "/conditions",
+          "/claims",
+          "/devices",
+          "/diagnostic-reports",
+          "/endpoints",
+          "/export-data",
+          "/example-route",
+          "/goals",
+          "/hello-world",
+          "/imaging-studies",
+          "/immunizations",
+          "/import-data",
+          "/locations",
+          "/medications",
+          "/medication-orders",
+          "/medication-statements",
+          "/organizations",
+          "/observations",
+          "/patients",
+          "/persons",
+          "/procedures",
+          "/practitioners",
+          "/risk-assessments",
+          "/questionnaires",
+          "/subscriptions",
+          "/workqueue",
+          "/vitals-tracking"
+        ],
+        "adminHidden":  [
+          "/allergies",
+          "/communications",
+          "/consents",
+          "/consents",
+          "/contracts",
+          "/claims",
+          "/endpoints",
+          "/biometrics-dashboard",
+          "/body-mass-index",
+          "/imaging-studies",
+          "/immunizations",
+          "/goals",
+          "/locations",
+          "/devices",
+          "/medication-statements",
+          "/persons",
+          "/risk-assessments",
+          "/questionnaires",
+          "/subscriptions",
+          "/workqueue",
+          "/hello-world",
+          "/vitals-tracking",
+          "/example-route",
+          "/import-data",
+          "/export-data",
+          "/data-management"
+        ]
+      }
+    },
+    "interfaces": {
+      "default": {
+        "status": "active",
+        "channel": {
+          "endpoint": "http://localhost:8080/baseDstu2"
+        },
+        "auth": {
+          "username": "iPcaA8Qg4ElaTjOlm1fkoiPdC8AGEpJ6",
+          "password": "AI1yGzOfo06Gg3ku"
+        }
+      }
+    },
+    "modules": {
+      "data": true,
+      "forum": true,
+      "genome": true,
+      "healthlog": true,
+      "dermatograms": true,
+      "telemedicine": true,
+      "inbound": true,
+      "outbound": true,
+      "epic": true,
+      "statisticsLogging": true,
+      "apps": {
+        "ChecklistManifesto": true,
+        "ContinuityOfCare": true,
+        "Videoconferencing": true,
+        "ZygoteAvatar": true        
+      },
+      "fhir": {
+        "AllergyIntolerances": false,
+        "AuditEvents": true,
+        "BodySites": true,
+        "CarePlans": false,
+        "ClinicalDocuments": true,
+        "Conditions": true,
+        "Documents": true,
+        "Devices": false,
+        "DiagnosticReports": true,
+        "DocumentReference": true,
+        "Encounters": true,
+        "Goals": false,
+        "ImagingStudies": false,
+        "Immunizations": false,
+        "Locations": false,
+        "Lists": true,
+        "Medications": false,
+        "MedicationOrders": false,
+        "MedicationStatements": false,
+        "Organizations": true,
+        "Observations": true,
+        "Patients": true,
+        "Practitioners": false,
+        "Procedures": true,
+        "Questionnaires": false,
+        "RiskAssessments": false
+      }
+    }
+  },
+  "private": {
+    "practitionerAccessCode": "hippocrates",
+    "sysadminAccessCode": "rootaccess",
+    "disableOauth": true,
+    "demo": {
+      "nightlyDatabaseDrop": true
+    }
+  }
+}
