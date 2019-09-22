@@ -93,7 +93,7 @@ Session.setDefault('measuresArray', [{
 }]);
 
 
-Session.setDefault('usePseudoCodes', get(Meteor, 'settings.public.usePseudoCodes'));
+Session.setDefault('usePseudoCodes', get(Meteor, 'settings.public.accreditation.usePseudoCodes'));
 
 
 Session.setDefault('activeMeasure', {});
@@ -121,7 +121,7 @@ Session.setDefault('end_date', '2018-08-01');
 
 
 let apiKey = get(Meteor, 'settings.public.interfaces.default.auth.username', '');
-let usePseudoCodes = get(Meteor, 'settings.public.usePseudoCodes', false);
+let usePseudoCodes = get(Meteor, 'settings.public.accreditation.usePseudoCodes', false);
 let fhirBaseUrl = get(Meteor, 'settings.public.interfaces.default.channel.endpoint', false);
 
 spliceId = function(input){
@@ -393,11 +393,15 @@ export class AccreditationScorecardPage extends React.Component {
     let dateQuery = this.generateDateQuery() + '&';    
 
     let heartfailureEncounterUrl = "";
-    let reasonCodes = "84114007,161505003";  // Heart failure
+    let encounterReasonCodes = "84114007,161505003";  // Heart failure
+
+    if(get(Meteor, 'settings.public.accreditation.encounterReasonCodes')){
+      encounterReasonCodes = get(Meteor, 'settings.public.accreditation.encounterReasonCodes');
+    }
 
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
-      reasonCodes = reasonCodes + ",74400008,72892002" // Appendicitis, Normal Pregnancy
+      encounterReasonCodes = encounterReasonCodes + ",74400008,72892002" // Appendicitis, Normal Pregnancy
     }
 
     let apiKeySuffix = '';
@@ -407,10 +411,10 @@ export class AccreditationScorecardPage extends React.Component {
 
     if(Session.equals('fhirVersion') === "R4"){
       // R4
-      heartfailureEncounterUrl = this.data.endpoint + '/Encounter?reason-code=' + reasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;
+      heartfailureEncounterUrl = this.data.endpoint + '/Encounter?reason-code=' + encounterReasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;
     } else {
       // STU3
-      heartfailureEncounterUrl = this.data.endpoint + '/Encounter?reason=' + reasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;
+      heartfailureEncounterUrl = this.data.endpoint + '/Encounter?reason=' + encounterReasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;
     }
 
 
@@ -428,20 +432,35 @@ export class AccreditationScorecardPage extends React.Component {
 
       Encounters.remove({});
       parsedResults.entry.forEach(function(entry){
+        // DSTU2
+        if(get(entry, 'resource.class') === "ambulatory"){
+          encounters_ambulatory_with_heartfailure++;
+        }
+        if(["daytime", "home", "other"].includes(get(entry, 'resource.class'))){
+          encounters_observational_with_heartfailure++;
+        }
+        if(get(entry, 'resource.class') === "emergency"){
+          encounters_emergency_with_heartfailure++;
+        }
+        if(get(entry, 'resource.class') === "inpatient"){
+          encounters_inpatients_with_heartfailure++;
+        }
+
+        // STU3
         if(get(entry, 'resource.class.code') === "ambulatory"){
           encounters_ambulatory_with_heartfailure++;
         }
-        if(get(entry, 'resource.class.code') === "emergency"){
+        if(["daytime", "home", "other"].includes(get(entry, 'resource.class.code'))){
           encounters_observational_with_heartfailure++;
         }
-        if(get(entry, 'resource.class.code') === "EMERGENCY"){
+        if(get(entry, 'resource.class.code') === "emergency"){
           encounters_emergency_with_heartfailure++;
         }
         if(get(entry, 'resource.class.code') === "inpatient"){
           encounters_inpatients_with_heartfailure++;
         }
         console.log('encounter', get(entry, 'resource'));
-        Encounters.insert(get(entry, 'resource'));
+        Encounters._collection.insert(get(entry, 'resource'));
       })
 
       Session.set('encounters_with_heartfailure', {
@@ -468,19 +487,23 @@ export class AccreditationScorecardPage extends React.Component {
       apiKeySuffix = '&apikey=' + this.data.apiKey;
     }
 
-    let reasonCodes = "84114007,161505003";  // Heart failure
+    let encounterReasonCodes = "84114007,161505003";  // Heart failure
+
+    if(get(Meteor, 'settings.public.accreditation.encounterReasonCodes')){
+      encounterReasonCodes = get(Meteor, 'settings.public.accreditation.encounterReasonCodes');
+    }
 
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
-      reasonCodes = reasonCodes + ",74400008,72892002" // Appendicitis, Normal Pregnancy
+      encounterReasonCodes = encounterReasonCodes + ",74400008,72892002" // Appendicitis, Normal Pregnancy
     }
 
     if(Session.equals('fhirVersion') === "R4"){
       // R4
-      heartfailureUrl = this.data.endpoint + '/Patient?_has:Encounter:reason-code=' + reasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;      
+      heartfailureUrl = this.data.endpoint + '/Patient?_has:Encounter:reason-code=' + encounterReasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;      
     } else {
       // STU3
-      heartfailureUrl = this.data.endpoint + '/Patient?_has:Encounter:reason=' + reasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;      
+      heartfailureUrl = this.data.endpoint + '/Patient?_has:Encounter:reason=' + encounterReasonCodes + '&' + dateQuery + '_count=1000' + apiKeySuffix;      
     }
 
     console.log('heartfailureUrl', heartfailureUrl);
@@ -628,6 +651,7 @@ export class AccreditationScorecardPage extends React.Component {
     let reasonCodes = [];
 
     Encounters.find().forEach(function(encounter){
+      // STU3
       switch (get(encounter, 'class.code')) {
         case "ambulatory":
           dstu2.ambulatory++;
@@ -675,6 +699,30 @@ export class AccreditationScorecardPage extends React.Component {
           break;
       }
 
+      // DSTU2
+      switch (get(encounter, 'class')) {
+        case "ambulatory":
+          dstu2.ambulatory++;
+          break;
+        case "emergency":
+          dstu2.emergency++;
+          break;
+        case "daytime":
+          dstu2.observation_encounter++;
+          break;
+        case "field":
+          dstu2.field++;
+          break;
+        case "other":
+          dstu2.observation_encounter++;              
+          break;
+        case "inpatient":
+          dstu2.inpatient_encounter++;
+          break;
+        default:
+          break;
+      }
+
       let dischargeDate = get(encounter, 'period.end');
       let startDate = Session.get('start_date');
       let endDate = Session.get('endDate');
@@ -716,11 +764,21 @@ export class AccreditationScorecardPage extends React.Component {
 
     let heartfailureCount = 0;
 
-    let encounterReasonCodes = ["84114007","161505003"];  // Heart failure
+    let encounterReasonCodes = [
+      "84114007",
+      "161505003", 
+      "88805009"  // Chronic congestive heart failure (disorder)
+    ];  // Heart failure
+
+    if(get(Meteor, 'settings.public.accreditation.encounterReasonCodes')){
+      encounterReasonCodes = get(Meteor, 'settings.public.accreditation.encounterReasonCodes');
+    }
+
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
       encounterReasonCodes.push("74400008"); // Appendicitis
       encounterReasonCodes.push("72892002"); // Normal Pregnancy
+
     }
 
     Encounters.find({'reason.coding.code': {$in: encounterReasonCodes }}).forEach(function(encounter){
@@ -751,6 +809,11 @@ export class AccreditationScorecardPage extends React.Component {
 
 
     let encounterReasonCodes = ["12345678"];  // Heart failure
+
+    if(get(Meteor, 'settings.public.accreditation.encounterReasonCodes')){
+      encounterReasonCodes = get(Meteor, 'settings.public.accreditation.encounterReasonCodes');
+    }
+
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
       encounterReasonCodes.push("74400008"); // Appendicitis

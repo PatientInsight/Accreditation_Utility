@@ -1,8 +1,52 @@
 {
   "public": {
     "title": "PatientInsight - Accreditation Utility (Localhost)",
-    "usePseudoCodes": true,
     "apiKey": "",
+    "accreditation": {
+      "usePseudoCodes": false,
+      "encounterReasonCodes": [
+        "84114007",
+        "161505003", 
+        "88805009" 
+      ],
+      "cardiacEchoProcedureList": [
+        "40701008",
+        "241620005"
+      ],
+      "procedureCodes": [
+        "169690007"
+      ],
+      "nitroglycerinProcedureCodes": [
+        "12345678"
+      ],
+      "ivTherapyProcedureCodes": [
+        "12345678"
+      ],
+      "medicationRecProcedures": [
+        "428191000124101"
+      ],
+      "cardioConsultProcedureCodes": [
+        "12345678"
+      ],
+      "cardiacResyncProcedureCodes": [
+        "80146002"
+      ],
+      "physicalExamProcedureCodes": [
+        "5880005"
+      ],
+      "ioProcedureCodes": [
+        "12345678"
+      ],
+      "weightProcedureCodes": [
+        "29463-7"
+      ],
+      "cardioConsultInpatientCodes": [
+        "12345678"
+      ],
+      "renalProcedureCodes": [
+        "12345678"
+      ]
+    },
     "theme": {
       "showVideoBackground": false,
       "darkroomTextEnabled": false,

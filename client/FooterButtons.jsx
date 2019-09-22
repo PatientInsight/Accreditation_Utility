@@ -30,18 +30,23 @@ export class ScorecardButtons extends React.Component {
   fetchPatients(){
     console.log('Fetching Patients')
 
-    let reasonCodes = ["84114007","161505003"];  // Heart failure
+    let encounterReasonCodes = ["84114007","161505003"];  // Heart failure
+
+    if(get(Meteor, 'settings.public.accreditation.encounterReasonCodes')){
+      encounterReasonCodes = get(Meteor, 'settings.public.accreditation.encounterReasonCodes');
+    }
 
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
-      reasonCodes.push("74400008") // Appendicitis
-      reasonCodes.push("72892002"); // Normal Pregnancy
+      encounterReasonCodes.push("74400008") // Appendicitis
+      encounterReasonCodes.push("72892002"); // Normal Pregnancy
     }
+
 
     // generate the url to fetch the encounters for a particular date range
     let dateQuery = AutoFetcher.generateDateQuery();    
     Encounters.find({
-      'reason.coding.code': {$in: reasonCodes }
+      'reason.coding.code': {$in: encounterReasonCodes }
     }).forEach(function(encounter){
       if(get(encounter, 'id')){
         // let encounterUrl = fhirBaseUrl + '/Procedure?encounter=Encounter/' + get(encounter, 'id') + '&_count=1000&apikey=' + apiKey;
@@ -203,26 +208,42 @@ export class EncountersButtons extends React.Component {
     Session.set('encountersTableQuery', {});
   }
   filterHeartFailures(){
-    let reasonCode = "12345678"  // Heart Failure
+    let encounterReasonCode = "12345678"  // Heart Failure
+
+    if(get(Meteor, 'settings.public.accreditation.encounterReasonCodes')){
+      encounterReasonCodes = get(Meteor, 'settings.public.accreditation.encounterReasonCodes');
+    }
 
     if(Session.get('usePseudoCodes')){
       console.log('Using psueduo codes.  To disable; please edit the settings file.')
-      reasonCode = "80146002" // Appendectomy
+      encounterReasonCode = "80146002" // Appendectomy
     }
 
-    Session.set('encountersTableQuery', {'reason.coding.code': reasonCode});
+    Session.set('encountersTableQuery', {'reason.coding.code': encounterReasonCode});
   }
   filterEmergency(){
-    Session.set('encountersTableQuery', {'class.code': 'EMERGENCY'});    
+    Session.set('encountersTableQuery', {$or: [
+      {'class': 'emergency'},       // DSTU2
+      {'class.code': 'emergency'}   // STU3, R4
+    ]});    
   }
   filterObservational(){
-    Session.set('encountersTableQuery', {'class.code': 'emergency'});
+    Session.set('encountersTableQuery', {$or: [
+      {'class': {$in: ["field", "daytime", "other"]}},      // DSTU2
+      {'class.code': {$in: ["field", "daytime", "other"]}}  // STU3, R4
+    ]});
   }
   filterInpatient(){
-    Session.set('encountersTableQuery', {'class.code': 'inpatient'});    
+    Session.set('encountersTableQuery', {$or: [
+      {'class': 'inpatient'},       // DSTU2
+      {'class.code': 'inpatient'}   // STU3, R4
+    ]});    
   }
   filterAmbulatory(){
-    Session.set('encountersTableQuery', {'class.code': 'ambulatory'});    
+    Session.set('encountersTableQuery', {$or: [
+      {'class': 'ambulatory'},       // DSTU2
+      {'class.code': 'ambulatory'}   // STU3, R4
+    ]});    
   }
   render() {
     return (
