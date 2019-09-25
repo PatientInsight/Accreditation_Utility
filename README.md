@@ -40,7 +40,7 @@ meteor npm install
 meteor --settings packages/accreditation-utility/configs/settings.example.json
 
 # run with licensed packages
-meteor --settings packages/accreditation-utility/configs/settings.example.json --extra-packages symptomatic:theming,symtomatic:smart-on-fhir-client,symptomatic:continuity-of-care,symptomatic:hl7-clinical-document-architecture
+meteor --settings packages/accreditation-utility/configs/settings.example.json --extra-packages symptomatic:theming,symtomatic:smart-on-fhir-client,symptomatic:continuity-of-care,symptomatic:hl7-clinical-document-architecture,patientinsight:accreditation-utility
 
 ```
 
