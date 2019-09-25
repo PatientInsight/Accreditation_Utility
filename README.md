@@ -38,6 +38,10 @@ meteor npm install
 
 # run with a custom settings file
 meteor --settings packages/accreditation-utility/configs/settings.example.json
+
+# run with extra packages
+meteor --settings packages/accreditation-utility/configs/settings.example.json --extra-packages symptomatic:theming,symtomatic:smart-on-fhir-client,symptomatic:continuity-of-care,clincial:hl7-clinical-document-architecture
+
 ```
 
 #### Compile to desktop app
@@ -77,7 +81,7 @@ nano modules/congestive_heart_failure.json
 ./gradlew build check test
 
 # run synthea and create a few thousand test patients
-./run_synthea -s 12345 -m heart* -p 1000 California "Los Angeles"
+./run_synthea -s 12345 -m *heart* -p 1000 California "Los Angeles"
 ```
 
 
@@ -89,10 +93,10 @@ brew install hapi-fhir-cli
 
 # run the hapi server using DSTU2 
 # most EHRs from 2015 include this supprot
-hapi-fhir-cli run-server -v dstu2
+hapi-fhir-cli run-server -v dstu2 -p 3100
 
 # load the output directory into the HAPI server
-node index.js -d ../synthea/output/fhir_dstu2/ -t 'hello hapi' -w -S http://localhost:8080/baseDstu2/
+node index.js -d ../synthea/output/fhir_dstu2/ -t 'hello hapi' -w -S http://localhost:3100/baseDstu2/
 
 # confirm that data is loaded correctly
 curl http://localhost:8080/baseDstu2/Patient?_count=100

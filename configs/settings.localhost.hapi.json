@@ -2,6 +2,18 @@
   "public": {
     "title": "PatientInsight - Accreditation Utility (Localhost)",
     "apiKey": "",
+    "interfaces": {
+      "default": {
+        "status": "active",
+        "channel": {
+          "endpoint": "http://localhost:3100/baseDstu2"
+        },
+        "auth": {
+          "username": "iPcaA8Qg4ElaTjOlm1fkoiPdC8AGEpJ6",
+          "password": "AI1yGzOfo06Gg3ku"
+        }
+      }
+    },
     "accreditation": {
       "usePseudoCodes": false,
       "encounterReasonCodes": [
@@ -172,18 +184,6 @@
           "/export-data",
           "/data-management"
         ]
-      }
-    },
-    "interfaces": {
-      "default": {
-        "status": "active",
-        "channel": {
-          "endpoint": "http://localhost:8080/baseDstu2"
-        },
-        "auth": {
-          "username": "iPcaA8Qg4ElaTjOlm1fkoiPdC8AGEpJ6",
-          "password": "AI1yGzOfo06Gg3ku"
-        }
       }
     },
     "modules": {
