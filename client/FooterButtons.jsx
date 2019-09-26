@@ -27,7 +27,7 @@ export class ScorecardButtons extends React.Component {
   constructor(props) {
     super(props);
   }
-  fetchPatients(){
+  fetchPatients(){ 
     console.log('Fetching Patients')
 
     let encounterReasonCodes = ["84114007","161505003"];  // Heart failure
@@ -42,6 +42,8 @@ export class ScorecardButtons extends React.Component {
       encounterReasonCodes.push("72892002"); // Normal Pregnancy
     }
 
+    console.log('Searching Encounters for the following encounter reason codes:', encounterReasonCodes);
+
 
     // generate the url to fetch the encounters for a particular date range
     let dateQuery = AutoFetcher.generateDateQuery();    
@@ -55,6 +57,9 @@ export class ScorecardButtons extends React.Component {
         if(isFhirServerThatRequiresApiKey()){
           encounterUrl = encounterUrl + '?apikey=' + apiKey;
         }
+
+        console.log('encounterUrl', encounterUrl, encounter);
+
         Meteor.setTimeout(function(){
           AutoFetcher.recursivePatientQuery(encounterUrl, apiKey)
         }, 100);
