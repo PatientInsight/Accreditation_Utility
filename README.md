@@ -68,7 +68,7 @@ meteor --settings packages/accreditation-utility/configs/settings.example.json
 # download synthea
 # this version of synthea is configured with cardiac data
 # and exports DSTU2 files
-git clone https://github.com/synthetichealth/synthea.git
+git clone https://github.com/PatientInsight/synthea.git
 cd synthea
 
 # build the utility
