@@ -40,7 +40,7 @@ meteor npm install
 meteor --settings packages/accreditation-utility/configs/settings.localhost.hapi.json
 
 # run with licensed packages
-meteor --settings packages/accreditation-utility/configs/settings.ocalhost.hapi.json --extra-packages symptomatic:theming,symptomatic:smart-on-fhir-client,symptomatic:continuity-of-care,symptomatic:hl7-clinical-document-architecture,patientinsight:accreditation-utility,clinical:hl7-resource-document-reference
+meteor --settings packages/accreditation-utility/configs/settings.localhost.hapi.json --extra-packages symptomatic:theming,symptomatic:smart-on-fhir-client,symptomatic:continuity-of-care,symptomatic:hl7-clinical-document-architecture,patientinsight:accreditation-utility,clinical:hl7-resource-document-reference
 ```
 
 #### Compile to desktop app
