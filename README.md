@@ -37,11 +37,10 @@ meteor add patientinsight:accreditation-utility
 meteor npm install
 
 # run with a custom settings file
-meteor --settings packages/accreditation-utility/configs/settings.example.json
+meteor --settings packages/accreditation-utility/configs/settings.localhost.hapi.json
 
 # run with licensed packages
-meteor --settings packages/accreditation-utility/configs/settings.example.json --extra-packages symptomatic:theming,symtomatic:smart-on-fhir-client,symptomatic:continuity-of-care,symptomatic:hl7-clinical-document-architecture,patientinsight:accreditation-utility,clinical:hl7-resource-document-reference
-
+meteor --settings packages/accreditation-utility/configs/settings.ocalhost.hapi.json --extra-packages symptomatic:theming,symptomatic:smart-on-fhir-client,symptomatic:continuity-of-care,symptomatic:hl7-clinical-document-architecture,patientinsight:accreditation-utility,clinical:hl7-resource-document-reference
 ```
 
 #### Compile to desktop app
