@@ -51,8 +51,18 @@ export class ScorecardButtons extends React.Component {
       'reason.coding.code': {$in: encounterReasonCodes }
     }).forEach(function(encounter){
       if(get(encounter, 'id')){
+        console.log('encounter has id', encounter);
         // let encounterUrl = fhirBaseUrl + '/Procedure?encounter=Encounter/' + get(encounter, 'id') + '&_count=1000&apikey=' + apiKey;
-        let encounterUrl = fhirBaseUrl + '/'+ get(encounter, 'subject.reference');
+
+
+
+        let encounterUrl = fhirBaseUrl + '/';
+
+        if(get(encounter, 'subject.reference')){
+          encounterUrl = encounterUrl + get(encounter, 'subject.reference');
+        } else if(get(encounter, 'patient.reference')){
+          encounterUrl = encounterUrl + get(encounter, 'patient.reference');
+        }
         
         if(isFhirServerThatRequiresApiKey()){
           encounterUrl = encounterUrl + '?apikey=' + apiKey;
@@ -65,7 +75,7 @@ export class ScorecardButtons extends React.Component {
         }, 100);
       }
     })
-  }
+  } 
   fetchProcedures(){
     console.log('Fetching Procedures')
 

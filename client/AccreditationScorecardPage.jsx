@@ -1620,128 +1620,135 @@ export class AccreditationScorecardPage extends React.Component {
             <CardTitle 
               title="Cardiac Accreditation Scorecard" 
               subtitle={ this.data.endpoint + this.data.fhirQueryUrl + '&apikey=' + this.data.apiKey }
-              style={{fontSize: '100%'}} />
-            <CardText style={{fontSize: '100%'}}>
+              style={{fontSize: '100%', backgroundColor: 'white', zIndex: 1000, top: '0px', position: 'sticky'}} />
+            <div style={{position: 'relative'}}>
+              <CardText style={{fontSize: '100%'}}>
+                <hr />
+                <DatePicker defaultDate={ new Date("2018", "07", "01") } hintText="Start" mode="landscape" className='start_date' name='start_date' style={{width: '200px', marginRight: '80px', float: 'left'}} onChange={this.changeStartDate.bind(this)} />
+                <DatePicker defaultDate={ new Date("2018", "07", "01") } hintText="End" mode="landscape" className='end_date' name='end_date' style={{width: '200px', marginRight: '80px', float: 'left'}} onChange={this.changeEndDate.bind(this)} />
+
+                {/* <RaisedButton label="§ Heartfailure Encounters" onClick={this.queryHeartfailureEncounters.bind(this)} style={{marginRight: '20px'}} />              */}
+
+                <div style={{width: '100%'}}>
+                  {/* <RaisedButton disabled label="Metadata" onClick={this.fetchMetadata.bind(this, client)} style={{marginRight: '20px'}} />      
+                  <RaisedButton disabled label="Show JSON" onClick={this.toggleDisplayJson.bind(this)} style={{marginRight: '20px'}} />
+
+                  <RaisedButton disabled label="§ Patients" onClick={this.queryPatients.bind(this)} style={{marginRight: '20px'}} />             
+                  <RaisedButton disabled label="§ Patient Stats" onClick={this.queryPatientStats.bind(this)} style={{marginRight: '20px'}} />             
+
+                  <RaisedButton disabled label="§ Heartfailure Patients" onClick={this.queryHeartfailurePatients.bind(this)} style={{marginRight: '20px'}} />              */}
+
+                  <RaisedButton label="1. Fetch Encounters" onClick={this.queryAllEncountersForDaterange.bind(this)} style={{marginRight: '20px'}} />                             
+                  <RaisedButton label="2. Parse Encounters" onClick={this.parseEncounters.bind(this)} style={{marginRight: '20px'}} />                             
+                  <RaisedButton label="3. Find Heartfailures" onClick={this.findHeartfailuresInEncounters.bind(this)} style={{marginRight: '20px'}} />                             
+                </div>
 
 
 
-             <hr />
-             <DatePicker defaultDate={ new Date("2018", "07", "01") } hintText="Start" mode="landscape" className='start_date' name='start_date' style={{width: '200px', marginRight: '80px', float: 'left'}} onChange={this.changeStartDate.bind(this)} />
-             <DatePicker defaultDate={ new Date("2018", "07", "01") } hintText="End" mode="landscape" className='end_date' name='end_date' style={{width: '200px', marginRight: '80px', float: 'left'}} onChange={this.changeEndDate.bind(this)} />
+                <hr />
 
-             {/* <RaisedButton label="§ Heartfailure Encounters" onClick={this.queryHeartfailureEncounters.bind(this)} style={{marginRight: '20px'}} />              */}
+                <div style={{width: '100%', height: '60px'}}>
+                  <CardTitle 
+                    title={ get(this, 'data.totals.encounters.total') } 
+                    subtitle="Encounters (Total)"
+                    style={{fontSize: '100%', float: 'left', width: '200px'}} 
+                  />
+                  <CardTitle 
+                    title={ get(this, 'data.totals.encounters.inpatients') } 
+                    subtitle="§ Inpatients"
+                    style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                  />
+                  <CardTitle 
+                    title={ get(this, 'data.totals.encounters.observations') } 
+                    subtitle="§ Observational"
+                    style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                  />
+                  <CardTitle 
+                    title={ get(this, 'data.totals.encounters.ambulatory') } 
+                    subtitle="§ Ambulatory"
+                    style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                  />
+                  <CardTitle 
+                    title={ get(this, 'data.totals.encounters.emergency') } 
+                    subtitle="§ Emergency"
+                    style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                  />
+                  <CardTitle 
+                    title={ get(this, 'data.totals.encounters.discharged') } 
+                    subtitle="§ Discharged Date"
+                    style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                  />
+                  <CardTitle 
+                    title={ get(this, 'data.totals.encounters.discharged_with_heartfailure') } 
+                    subtitle="$ Heartfailure Reasons"
+                    style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                  />  
+                </div>
+                <br />
+                <hr />
 
-              <div style={{width: '100%'}}>
-                {/* <RaisedButton disabled label="Metadata" onClick={this.fetchMetadata.bind(this, client)} style={{marginRight: '20px'}} />      
-                <RaisedButton disabled label="Show JSON" onClick={this.toggleDisplayJson.bind(this)} style={{marginRight: '20px'}} />
+                <div style={{width: '100%', height: '60px', position: 'relative'}}>              
+                  <CardTitle 
+                        title={ get(this, 'data.totals.patients.total') } 
+                        subtitle="Patients"
+                        style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                      />                
+                  <CardTitle 
+                      title={ get(this, 'data.totals.procedures.total') } 
+                      subtitle="Procedures"
+                      style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                    />                
+                  <CardTitle 
+                      title={ get(this, 'data.totals.observations.total') } 
+                      subtitle="Observations"
+                      style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                    />                
+                  <CardTitle 
+                      title={ get(this, 'data.totals.diagnosticReports.total') } 
+                      subtitle="Diagnostic Reports"
+                      style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                    />    
+                  <CardTitle 
+                      title={ get(this, 'data.totals.documentReferences.total') } 
+                      subtitle="Document References"
+                      style={{fontSize: '100%', float: 'left', width: '180px'}} 
+                    />                                
+                </div>
+                <br />
 
-                <RaisedButton disabled label="§ Patients" onClick={this.queryPatients.bind(this)} style={{marginRight: '20px'}} />             
-                <RaisedButton disabled label="§ Patient Stats" onClick={this.queryPatientStats.bind(this)} style={{marginRight: '20px'}} />             
-
-                <RaisedButton disabled label="§ Heartfailure Patients" onClick={this.queryHeartfailurePatients.bind(this)} style={{marginRight: '20px'}} />              */}
-
-                <RaisedButton label="1. Fetch Encounters" onClick={this.queryAllEncountersForDaterange.bind(this)} style={{marginRight: '20px'}} />                             
-                <RaisedButton label="2. Parse Encounters" onClick={this.parseEncounters.bind(this)} style={{marginRight: '20px'}} />                             
-                <RaisedButton label="3. Find Heartfailures" onClick={this.findHeartfailuresInEncounters.bind(this)} style={{marginRight: '20px'}} />                             
-              </div>
-
-
-
-             <hr />
-         
-             <div style={{width: '100%', height: '60px', position: 'absolute'}}>
-                <CardTitle 
-                  title={ get(this, 'data.totals.encounters.total') } 
-                  subtitle="Encounters (Total)"
-                  style={{fontSize: '100%', float: 'left', width: '200px'}} 
-                />
-                <CardTitle 
-                  title={ get(this, 'data.totals.encounters.inpatients') } 
-                  subtitle="§ Inpatients"
-                  style={{fontSize: '100%', float: 'left', width: '180px'}} 
-                />
-                <CardTitle 
-                  title={ get(this, 'data.totals.encounters.observations') } 
-                  subtitle="§ Observational"
-                  style={{fontSize: '100%', float: 'left', width: '180px'}} 
-                />
-                <CardTitle 
-                  title={ get(this, 'data.totals.encounters.ambulatory') } 
-                  subtitle="§ Ambulatory"
-                  style={{fontSize: '100%', float: 'left', width: '180px'}} 
-                />
-                <CardTitle 
-                  title={ get(this, 'data.totals.encounters.emergency') } 
-                  subtitle="§ Emergency"
-                  style={{fontSize: '100%', float: 'left', width: '180px'}} 
-                />
-                <CardTitle 
-                  title={ get(this, 'data.totals.encounters.discharged') } 
-                  subtitle="§ Discharged Date"
-                  style={{fontSize: '100%', float: 'left', width: '180px'}} 
-                />
-                <CardTitle 
-                  title={ get(this, 'data.totals.encounters.discharged_with_heartfailure') } 
-                  subtitle="$ Heartfailure Reasons"
-                  style={{fontSize: '100%', float: 'left', width: '180px'}} 
-                />  
-             </div>
-             <div style={{width: '100%', height: '60px', position: 'relative'}}>              
-             <CardTitle 
-                  title={ get(this, 'data.totals.documentReferences.total') } 
-                  subtitle="Document References"
-                  style={{fontSize: '100%', float: 'right', width: '180px'}} 
-                />                                
-              <CardTitle 
-                  title={ get(this, 'data.totals.diagnosticReports.total') } 
-                  subtitle="Diagnostic Reports"
-                  style={{fontSize: '100%', float: 'right', width: '180px'}} 
-                />    
-              <CardTitle 
-                  title={ get(this, 'data.totals.observations.total') } 
-                  subtitle="Observations"
-                  style={{fontSize: '100%', float: 'right', width: '180px'}} 
-                />                
-              <CardTitle 
-                  title={ get(this, 'data.totals.procedures.total') } 
-                  subtitle="Procedures"
-                  style={{fontSize: '100%', float: 'right', width: '180px'}} 
-                />                
-              <CardTitle 
-                  title={ get(this, 'data.totals.patients.total') } 
-                  subtitle="Patients"
-                  style={{fontSize: '100%', float: 'right', width: '180px'}} 
-                />                
-             </div>
-            <br />
-
-             {/* <RaisedButton label="Query Endoscopy" onClick={this.queryEndoscopy.bind(this)} style={{marginRight: '20px'}} />             
-             <RaisedButton label="Query Echocardiograms" onClick={this.queryEchocardiograms.bind(this)} style={{marginRight: '20px'}} />
-             <RaisedButton label="Query Angiography" onClick={this.queryAngiography.bind(this)} style={{marginRight: '20px'}} />
-             <RaisedButton label="Query Cardiac MRIs" onClick={this.queryCardiacMris.bind(this)} /><br /><br /> */}
+                {/* <RaisedButton label="Query Endoscopy" onClick={this.queryEndoscopy.bind(this)} style={{marginRight: '20px'}} />             
+                <RaisedButton label="Query Echocardiograms" onClick={this.queryEchocardiograms.bind(this)} style={{marginRight: '20px'}} />
+                <RaisedButton label="Query Angiography" onClick={this.queryAngiography.bind(this)} style={{marginRight: '20px'}} />
+                <RaisedButton label="Query Cardiac MRIs" onClick={this.queryCardiacMris.bind(this)} /><br /><br /> */}
 
 
-              { codeSection }
-              
-              <Table hover style={{position: 'relative', top: '100px'}}>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Identifier</th>
-                    <th>Measure Description</th>
-                    <th>Numerator</th>
-                    <th>Denominator</th>
-                    <th>Score</th>
-                    <th>Pass / Fail</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  { tableRows }
-                </tbody>
-              </Table>
- 
-            </CardText>
+                { codeSection }
+              </CardText>
+
+            </div>
+            <div style={{fontSize: '100%', position: 'sticky', top: '86px'}}>
+              <CardText >
+                <Table hover style={{position: 'relative', top: '100px'}}>
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Identifier</th>
+                      <th>Measure Description</th>
+                      <th>Numerator</th>
+                      <th>Denominator</th>
+                      <th>Score</th>
+                      <th>Pass / Fail</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    { tableRows }
+                  </tbody>
+                </Table>
+  
+              </CardText>
+            </div>
+            <div style={{height: '200px'}}></div>
           </GlassCard>
         </FullPageCanvas>
       </div>
