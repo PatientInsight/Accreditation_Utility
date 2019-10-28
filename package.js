@@ -1,6 +1,6 @@
 Package.describe({
     name: 'patientinsight:accreditation-utility',
-    version: '0.1.22',
+    version: '0.1.26',
     summary: 'PatientInsight - Accreditation Utility (Cardiac)',
     git: 'https://github.com/symptomatic/accreditation-utility  ',
     documentation: 'README.md'
@@ -41,9 +41,10 @@ Npm.depends({
     "moment": "2.20.1",
     "moment-timezone": "0.5.26",
     "lodash": "4.17.4",
-    "react": "16.2.0",
-    "react-dom": "16.4.1",
     "nivo": "0.31.0",
+    "@nivo/core": "0.59.1",
+    "@nivo/sankey": "0.59.1",
+    "@nivo/pie": "0.59.1",
     'react-katex': '2.0.2',
     "simpl-schema": "1.5.3",
     "fhir-kit-client": "1.4.0",

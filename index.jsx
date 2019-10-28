@@ -1,4 +1,6 @@
 import AccreditationScorecardPage from './client/AccreditationScorecardPage';
+import WorkflowPage from './client/WorkflowPage';
+
 import React from 'react';
 
 import { 
@@ -13,10 +15,20 @@ var DynamicRoutes = [{
   'component': AccreditationScorecardPage
 }];
 
+// , {
+//   'name': 'WorkflowPage',
+//   'path': '/workflow-map',
+//   'component': WorkflowPage
+// }
+
 var AdminSidebarElements = [{
   'primaryText': 'Scorecard',
   'to': '/scorecard',
   'href': '/scorecard'
+}, {
+  'primaryText': 'Workflow',
+  'to': '/workflow-map',
+  'href': '/workflow-map'
 }];
 
 
@@ -28,4 +40,4 @@ let FooterButtons = [{
   component: <ScorecardButtons />
 }];
 
-export { AdminSidebarElements, DynamicRoutes, AccreditationScorecardPage, FooterButtons };
+export { AdminSidebarElements, DynamicRoutes, AccreditationScorecardPage, WorkflowPage, FooterButtons };
