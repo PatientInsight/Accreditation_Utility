@@ -45,6 +45,8 @@ Npm.depends({
     "@nivo/core": "0.59.1",
     "@nivo/sankey": "0.59.1",
     "@nivo/pie": "0.59.1",
+    "@nivo/bar": "0.59.1",
+    "@nivo/parallel-coordinates": "0.59.2",
     'react-katex': '2.0.2',
     "simpl-schema": "1.5.3",
     "fhir-kit-client": "1.4.0",

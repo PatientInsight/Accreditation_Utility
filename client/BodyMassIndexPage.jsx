@@ -12,7 +12,6 @@ import { moment } from 'meteor/momentjs:moment';
 
 import { Session } from 'meteor/session';
 import { ObservationsTable } from 'meteor/clinical:hl7-resource-observation';
-import { Line } from 'nivo'
 import { render } from 'react-dom'
 
 // import { InlineMath, BlockMath } from 'react-katex';
@@ -99,7 +98,7 @@ export class BodyMassIndexPage extends React.Component {
                 </Row>
               </Col>
               <Col md={6}>
-                <Line
+                {/* <Line
                   width={this.data.chart.width}
                   height={this.data.chart.height}
                   curve='cardinal'
@@ -162,7 +161,7 @@ export class BodyMassIndexPage extends React.Component {
                           "symbolShape": "circle"
                       }
                   ]}
-                />
+                /> */}
                 <DynamicSpacer />
                 <div style={{width: '100%', textAlign: 'center'}}>
                   <h1>BMI = {this.data.bmi.weight} kg / {this.data.bmi.height} cm / {this.data.bmi.height} cm  * 10,000 = {bmi} </h1>
