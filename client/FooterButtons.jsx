@@ -1,10 +1,23 @@
 import { Meteor } from 'meteor/meteor';
 import { Session } from 'meteor/session';
 
+import { 
+  CssBaseline,
+  Grid, 
+  Container,
+  Divider,
+  Card,
+  CardHeader,
+  CardContent,
+  Button,
+  Tab, 
+  Tabs,
+  Typography,
+  Box
+} from '@material-ui/core';
+
+
 import React from 'react';
-import { browserHistory } from 'react-router';
-import { Glass } from 'meteor/clinical:glass-ui';
-import { FlatButton } from 'material-ui';
 import { get } from 'lodash';
 
 import AutoFetcher from '../lib/AutoFetcher';
@@ -184,11 +197,11 @@ export class ScorecardButtons extends React.Component {
   render() {
     return (
       <div>
-        <FlatButton label='4. Patients' onClick={this.fetchPatients.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='5. Procedures' onClick={this.fetchProcedures.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='6. Observations' onClick={this.fetchObservations.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='7. Diagnostic Reports' onClick={this.fetchDiagnosticReports.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='8. Document References' onClick={this.fetchDocumentReferences.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
+        <Button onClick={this.fetchPatients.bind(this) } >4. Patients</Button>
+        <Button onClick={this.fetchProcedures.bind(this) } >5. Procedures</Button>
+        <Button onClick={this.fetchObservations.bind(this) } >6. Observations</Button>
+        <Button onClick={this.fetchDiagnosticReports.bind(this) } >7. Diagnostic Reports</Button>
+        <Button onClick={this.fetchDocumentReferences.bind(this) } >8. Document References</Button>
       </div>
     );
   }
@@ -263,12 +276,12 @@ export class EncountersButtons extends React.Component {
   render() {
     return (
       <div>
-        <FlatButton label='All' onClick={this.filterAll.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='Heart Failures' onClick={this.filterHeartFailures.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='Emergency' onClick={this.filterEmergency.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='Observational' onClick={this.filterObservational.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='Inpatient' onClick={this.filterInpatient.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
-        <FlatButton label='Ambulatory' onClick={this.filterAmbulatory.bind(this) } style={ Glass.darkroom({marginLeft: '20px'}) } ></FlatButton>
+        <Button onClick={this.filterAll.bind(this) } >All</Button>
+        <Button onClick={this.filterHeartFailures.bind(this) } >Heart Failures</Button>
+        <Button onClick={this.filterEmergency.bind(this) } >Emergency</Button>
+        <Button onClick={this.filterObservational.bind(this) } >Observational</Button>
+        <Button onClick={this.filterInpatient.bind(this) } >Inpatient</Button>
+        <Button onClick={this.filterAmbulatory.bind(this) } >Ambulatory</Button>
       </div>
     );
   }

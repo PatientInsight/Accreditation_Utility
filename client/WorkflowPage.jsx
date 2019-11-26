@@ -11,7 +11,7 @@ import { get, has } from 'lodash';
 import { moment } from 'meteor/momentjs:moment';
 
 import { Session } from 'meteor/session';
-import { ObservationsTable } from 'meteor/clinical:hl7-resource-observation';
+// import { ObservationsTable } from 'meteor/clinical:hl7-resource-observation';
 import { Line } from 'nivo'
 import { render } from 'react-dom'
 

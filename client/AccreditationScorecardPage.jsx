@@ -19,9 +19,6 @@ import LosslessJSON from 'lossless-json';
 import JSON5 from 'json5';
 
 import Client from 'fhir-kit-client';
-
-
-
 console.log('Intitializing fhir-kit-client for ' + get(Meteor, 'settings.public.interfaces.default.channel.endpoint', ''))
 const client = new Client({
   baseUrl: get(Meteor, 'settings.public.interfaces.default.channel.endpoint', '')
@@ -137,6 +134,8 @@ spliceId = function(input){
     return false;
   }
 }
+
+
 export class AccreditationScorecardPage extends React.Component {
   constructor(props) {
     super(props);
@@ -1756,18 +1755,12 @@ export class AccreditationScorecardPage extends React.Component {
       </div>
     );
   }
-
-
-
-
   openLink(url){
     console.log("openLink", url);
     browserHistory.push(url);
   }
 }
-
-
-
 ReactMixin(AccreditationScorecardPage.prototype, ReactMeteorData);
+
 
 export default AccreditationScorecardPage;

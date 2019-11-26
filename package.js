@@ -1,6 +1,6 @@
 Package.describe({
     name: 'patientinsight:accreditation-utility',
-    version: '0.1.26',
+    version: '0.2.1',
     summary: 'PatientInsight - Accreditation Utility (Cardiac)',
     git: 'https://github.com/symptomatic/accreditation-utility  ',
     documentation: 'README.md'
@@ -9,30 +9,38 @@ Package.describe({
 Package.onUse(function(api) {
     api.versionsFrom('1.4');
     
-    api.use('meteor-platform');
-    api.use('ecmascript');
+    api.use('meteor-base@1.4.0');
+    api.use('ecmascript@0.12.4');
     api.use('react-meteor-data@0.2.15');
-    api.use('session');
     api.use('mongo');
+    api.use('session');
+    api.use('http');
 
-    api.use('clinical:glass-ui@2.1.6');
-    api.use('clinical:base-model@1.3.5');
+    // api.use('clinical:base-model@1.5.0');
+    // api.use('clinical:user-model@1.7.0');
+    // api.imply('clinical:user-model');
 
-    if(Package['clinical:fhir-vault-server']){
-        api.use('clinical:fhir-vault-server@0.0.3', ['client', 'server'], {weak: true});
-    }
+    // // if(Package['clinical:fhir-vault-server']){
+    // //     api.use('clinical:fhir-vault-server@0.0.3', ['client', 'server'], {weak: true});
+    // // }
      
-    api.use('clinical:hl7-resource-observation');
+    // // api.use('clinical:hl7-resource-observation');
 
-    api.use('aldeed:collection2@3.0.0');
-    api.use('simple:json-routes@2.1.0');
+    // api.use('aldeed:collection2@3.0.0');
+    // api.use('clinical:hl7-resource-datatypes@4.0.0');
+    // api.use('clinical:hl7-resource-bundle@1.5.5');
+    // api.use('simple:json-routes@2.1.0');
+    // api.use('momentjs:moment@2.17.1');
+    // api.use('clinical:extended-api@2.5.0');
+    // api.use('matb33:collection-hooks@0.7.15');  
 
-    api.addFiles('lib/collection.js');
+    // api.addFiles('lib/collection.js');
 
-    api.addFiles('server/methods.js', 'server');
-    api.addFiles('server/rest.js', 'server');
+    // api.addFiles('server/methods.js', 'server');
 
-    api.addFiles('assets/asclepius.png', "client", {isAsset: true});    
+    // api.addFiles('server/rest.js', 'server');
+    // api.addFiles('assets/asclepius.png', "client", {isAsset: true});    
+    
     api.mainModule('index.jsx', 'client');
 });
 

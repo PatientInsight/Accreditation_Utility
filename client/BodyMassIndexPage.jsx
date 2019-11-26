@@ -11,7 +11,7 @@ import { get, has } from 'lodash';
 import { moment } from 'meteor/momentjs:moment';
 
 import { Session } from 'meteor/session';
-import { ObservationsTable } from 'meteor/clinical:hl7-resource-observation';
+// import { ObservationsTable } from 'meteor/clinical:hl7-resource-observation';
 import { render } from 'react-dom'
 
 // import { InlineMath, BlockMath } from 'react-katex';
@@ -91,11 +91,11 @@ export class BodyMassIndexPage extends React.Component {
             <CardText style={{fontSize: '180%'}}>
             <Grid fluid style={{marginTop: '40px', marginBottom: '80px'}}>            
               <Col md={6}>
-                <Row>
+                {/* <Row>
                   <ObservationsTable query={{$or: [{'code.text': 'Height'}]}} />
                   <DynamicSpacer />
                   <ObservationsTable query={{$or: [{'code.text': 'Weight'}]}} />
-                </Row>
+                </Row> */}
               </Col>
               <Col md={6}>
                 {/* <Line
